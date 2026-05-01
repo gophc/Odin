@@ -311,3 +311,14 @@ build/
 cmake-build*/
 CMakeLists.txt
 sandbox/
+*.ipp
+*.i
+*.cipp
+*.ii
+/godin/vendor
+/.claude
+*.i.cpp
+*.i.hpp
+*.i.c
+*.i.h
+/odingo/vendor
