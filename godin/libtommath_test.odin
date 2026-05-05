@@ -2,7 +2,6 @@
 package godin
 
 import "core:testing"
-import "core:math"
 
 // 辅助：用字符串初始化（十进制）
 @(private)
@@ -51,7 +50,7 @@ test_mp_init_size :: proc(t: ^testing.T) {
     mp_clear(&a)
 
     // 超限测试
-    err = mp_init_size(&a, max(int)/2 + 1)
+    err = mp_init_size(&a, max(int) / 2 + 1)
     testing.expect(t, err == .MP_OVF)
 }
 
@@ -215,7 +214,7 @@ test_add_d_sub_d :: proc(t: ^testing.T) {
     err = mp_add_d(&a, 55, &c); if !expect_ok(t, err, "-100+55")  do return
     // 预期：绝对值 45，符号负
     testing.expectf(t, mp_get_i64(&c) == -45 && c.sign == .MP_NEG,
-                     "-100+55: expected -45, got sign=%v value=%s", c.sign, mp_to_string(&c))
+    "-100+55: expected -45, got sign=%v value=%s", c.sign, mp_to_string(&c))
 
     // 正数减单数字：100 - 30 = 70
     mp_set(&a, 100)
@@ -226,7 +225,7 @@ test_add_d_sub_d :: proc(t: ^testing.T) {
     a.sign = .MP_NEG
     err = mp_sub_d(&a, 30, &c); if !expect_ok(t, err, "-100-30")  do return
     testing.expectf(t, mp_get_i64(&c) == -130 && c.sign == .MP_NEG,
-                     "-100-30: expected -130, got %v", mp_to_string(&c))
+    "-100-30: expected -130, got %v", mp_to_string(&c))
 }
 
 // ==================== 乘法 ====================
@@ -241,13 +240,13 @@ test_mul_small :: proc(t: ^testing.T) {
 
     mp_set(&a, 123); mp_set(&b, 456)
     err = mp_mul(&a, &b, &c); if !expect_ok(t, err, "123*456")  do return
-    testing.expectf(t, mp_cmp_d(&c, 123*456) == .MP_EQ,
-                     "123*456: expected %v, got %v", 123*456, mp_to_string(&c))
+    testing.expectf(t, mp_cmp_d(&c, 123 * 456) == .MP_EQ,
+    "123*456: expected %v, got %v", 123 * 456, mp_to_string(&c))
 
     // 平方
     err = mp_mul(&a, &a, &c); if !expect_ok(t, err, "123^2")  do return
-    testing.expectf(t, mp_cmp_d(&c, 123*123) == .MP_EQ,
-                     "123^2: expected %v, got %v", 123*123, mp_to_string(&c))
+    testing.expectf(t, mp_cmp_d(&c, 123 * 123) == .MP_EQ,
+    "123^2: expected %v, got %v", 123 * 123, mp_to_string(&c))
 }
 
 @(test)
@@ -260,13 +259,13 @@ test_mul_d :: proc(t: ^testing.T) {
 
     mp_set(&a, 65537)
     err = mp_mul_d(&a, 2, &c); if !expect_ok(t, err, "65537*2")  do return
-    testing.expectf(t, mp_cmp_d(&c, 65537*2) == .MP_EQ,
-                     "65537*2: expected %v, got %v", 65537*2, mp_to_string(&c))
+    testing.expectf(t, mp_cmp_d(&c, 65537 * 2) == .MP_EQ,
+    "65537*2: expected %v, got %v", 65537 * 2, mp_to_string(&c))
 
     // 乘以 2 的幂：65537 * 8 = 524296
     err = mp_mul_d(&a, 8, &c); if !expect_ok(t, err, "65537*8")  do return
-    testing.expectf(t, mp_cmp_d(&c, 65537*8) == .MP_EQ,
-                     "65537*8: expected %v, got %v", 65537*8, mp_to_string(&c))
+    testing.expectf(t, mp_cmp_d(&c, 65537 * 8) == .MP_EQ,
+    "65537*8: expected %v, got %v", 65537 * 8, mp_to_string(&c))
 }
 
 @(test)
@@ -280,12 +279,12 @@ test_mul_2_mul_2d :: proc(t: ^testing.T) {
     mp_set(&a, 1)
     err = mp_mul_2d(&a, 62, &c); if !expect_ok(t, err, "2^62")  do return
     val := mp_get_mag_u64(&c)
-    testing.expectf(t, val == (u64(1) << 62), "2^62: expected %v, got %v", u64(1)<<62, val)
+    testing.expectf(t, val == (u64(1) << 62), "2^62: expected %v, got %v", u64(1) << 62, val)
 
     // 再乘 2
     err = mp_mul_2(&c, &c); if !expect_ok(t, err, "mul 2")  do return
     val = mp_get_mag_u64(&c)
-    testing.expect(t, val == (u64(1)<<62)*2)
+    testing.expect(t, val == (u64(1) << 62) * 2)
 }
 
 // ==================== 除法 ====================
@@ -301,7 +300,7 @@ test_div_2_div_2d :: proc(t: ^testing.T) {
     mp_set(&a, 1024)
     err = mp_div_2(&a, &c); if !expect_ok(t, err, "1024/2")  do return
     testing.expectf(t, mp_cmp_d(&c, 512) == .MP_EQ,
-                     "1024/2: expected 512, got %v", mp_to_string(&c))
+    "1024/2: expected 512, got %v", mp_to_string(&c))
 
     // 右移 3 位，同时取余数
     err = mp_div_2d(&a, 3, &c, &d); if !expect_ok(t, err, "1024/8 rem")  do return
@@ -331,7 +330,7 @@ test_mod_2d :: proc(t: ^testing.T) {
     testing.expectf(t, mp_cmp_d(&c, 0) == .MP_EQ, "mod 1: expected 0")
 
     // 模大于位数时复制原数
-    err = mp_mod_2d(&a, a.used*28+1, &c); if !expect_ok(t, err, "mod large")  do return
+    err = mp_mod_2d(&a, a.used * 28 + 1, &c); if !expect_ok(t, err, "mod large")  do return
     testing.expect(t, mp_cmp(&a, &c) == .MP_EQ)
 }
 
@@ -349,9 +348,9 @@ test_div_standard :: proc(t: ^testing.T) {
     mp_set(&a, 1000); mp_set(&b, 3)
     err = mp_div(&a, &b, &q, &r); if !expect_ok(t, err, "1000/3")  do return
     testing.expectf(t, mp_cmp_d(&q, 333) == .MP_EQ,
-                     "1000//3: expected 333, got %v", mp_to_string(&q))
+    "1000//3: expected 333, got %v", mp_to_string(&q))
     testing.expectf(t, mp_cmp_d(&r, 1) == .MP_EQ,
-                     "1000%%3: expected 1, got %v", mp_to_string(&r))
+    "1000%%3: expected 1, got %v", mp_to_string(&r))
 
     // 除数为零应报错
     mp_zero(&b)
@@ -370,9 +369,9 @@ test_div_d :: proc(t: ^testing.T) {
 
     mp_set(&a, 1000)
     err = mp_div_d(&a, 7, &q, &rem); if !expect_ok(t, err, "1000/7")  do return
-    testing.expectf(t, mp_cmp_d(&q, 1000/7) == .MP_EQ,
-                     "quot: expected %v, got %v", 1000/7, mp_to_string(&q))
-    testing.expectf(t, rem == 1000%7, "rem: expected %v, got %v", 1000%7, rem)
+    testing.expectf(t, mp_cmp_d(&q, 1000 / 7) == .MP_EQ,
+    "quot: expected %v, got %v", 1000 / 7, mp_to_string(&q))
+    testing.expectf(t, rem == 1000 % 7, "rem: expected %v, got %v", 1000 % 7, rem)
 
     // 除 1
     mp_set(&a, 12345)
@@ -394,7 +393,7 @@ test_gcd :: proc(t: ^testing.T) {
     mp_set(&a, 48); mp_set(&b, 180)
     err = mp_gcd(&a, &b, &g); if !expect_ok(t, err, "gcd(48,180)")  do return
     testing.expectf(t, mp_cmp_d(&g, 12) == .MP_EQ,
-                     "gcd(48,180): expected 12, got %v", mp_to_string(&g))
+    "gcd(48,180): expected 12, got %v", mp_to_string(&g))
 
     // gcd(a,0) = |a|
     mp_zero(&b)
@@ -414,7 +413,7 @@ test_lcm :: proc(t: ^testing.T) {
     mp_set(&a, 12); mp_set(&b, 18)
     err = mp_lcm(&a, &b, &l); if !expect_ok(t, err, "lcm(12,18)")  do return
     testing.expectf(t, mp_cmp_d(&l, 36) == .MP_EQ,
-                     "lcm(12,18): expected 36, got %v", mp_to_string(&l))
+    "lcm(12,18): expected 36, got %v", mp_to_string(&l))
 }
 
 @(test)
@@ -430,7 +429,7 @@ test_invmod_odd :: proc(t: ^testing.T) {
     mp_set(&a, 3); mp_set(&m, 11)
     err = mp_invmod(&a, &m, &inv); if !expect_ok(t, err, "invmod(3,11)")  do return
     testing.expectf(t, mp_cmp_d(&inv, 4) == .MP_EQ,
-                     "3^-1 mod 11: expected 4, got %v", mp_to_string(&inv))
+    "3^-1 mod 11: expected 4, got %v", mp_to_string(&inv))
 
     // 模数为零
     mp_zero(&m)
@@ -452,15 +451,15 @@ test_bitwise :: proc(t: ^testing.T) {
 
     err = mp_and(&a, &b, &c); if !expect_ok(t, err, "and")  do return
     testing.expectf(t, mp_cmp_d(&c, 0x0F00) == .MP_EQ,
-                     "0xFF00 & 0x0FF0: expected 0x0F00, got 0x%X", mp_get_mag_u32(&c))
+    "0xFF00 & 0x0FF0: expected 0x0F00, got 0x%X", mp_get_mag_u32(&c))
 
     err = mp_or(&a, &b, &c); if !expect_ok(t, err, "or")  do return
     testing.expectf(t, mp_cmp_d(&c, 0xFFF0) == .MP_EQ,
-                     "0xFF00 | 0x0FF0: expected 0xFFF0, got 0x%X", mp_get_mag_u32(&c))
+    "0xFF00 | 0x0FF0: expected 0xFFF0, got 0x%X", mp_get_mag_u32(&c))
 
     err = mp_xor(&a, &b, &c); if !expect_ok(t, err, "xor")  do return
     testing.expectf(t, mp_cmp_d(&c, 0xF0F0) == .MP_EQ,
-                     "0xFF00 ^ 0x0FF0: expected 0xF0F0, got 0x%X", mp_get_mag_u32(&c))
+    "0xFF00 ^ 0x0FF0: expected 0xF0F0, got 0x%X", mp_get_mag_u32(&c))
 }
 
 @(test)
@@ -482,7 +481,7 @@ test_complement_signed_rsh :: proc(t: ^testing.T) {
     mp_set(&a, 1); a.sign = .MP_NEG
     err = mp_signed_rsh(&a, 5, &c); if !expect_ok(t, err, "signed rsh -1")  do return
     testing.expectf(t, mp_get_i64(&c) == -1,
-                     "-1>>5: expected -1, got %v", mp_to_string(&c))
+    "-1>>5: expected -1, got %v", mp_to_string(&c))
 }
 
 // ==================== 平方根 & 幂 ====================
@@ -497,7 +496,7 @@ test_sqrt :: proc(t: ^testing.T) {
     mp_set(&x, 144)
     err = mp_sqrt(&x, &r); if !expect_ok(t, err, "sqrt 144")  do return
     testing.expectf(t, mp_cmp_d(&r, 12) == .MP_EQ,
-                     "sqrt(144): expected 12, got %v", mp_to_string(&r))
+    "sqrt(144): expected 12, got %v", mp_to_string(&r))
 
     // sqrt(0)
     mp_zero(&x)
@@ -522,12 +521,12 @@ test_expt_n :: proc(t: ^testing.T) {
     mp_set(&base, 2)
     err = mp_expt_n(&base, 10, &res); if !expect_ok(t, err, "2^10")  do return
     testing.expectf(t, mp_cmp_d(&res, 1024) == .MP_EQ,
-                     "2^10: expected 1024, got %v", mp_to_string(&res))
+    "2^10: expected 1024, got %v", mp_to_string(&res))
 
     err = mp_expt_n(&base, 0, &res); if !expect_ok(t, err, "2^0")  do return
     testing.expectf(t, mp_cmp_d(&res, 1) == .MP_EQ, "2^0: expected 1")
 
-    // 0^0? 库可能返回 1
+// 0^0? 库可能返回 1
 }
 
 // ==================== n 次方根 ====================
@@ -542,14 +541,14 @@ test_root_n :: proc(t: ^testing.T) {
     mp_set(&a, 125)
     err = mp_root_n(&a, 3, &r); if !expect_ok(t, err, "cbrt 125")  do return
     testing.expectf(t, mp_cmp_d(&r, 5) == .MP_EQ,
-                     "cbrt(125): expected 5, got %v", mp_to_string(&r))
+    "cbrt(125): expected 5, got %v", mp_to_string(&r))
 
     // 较大的数
     mp_set(&a, 1000000)
     err = mp_root_n(&a, 6, &r); if !expect_ok(t, err, "root6 1e6")  do return
     approx := mp_get_i32(&r)
     testing.expectf(t, approx >= 9 && approx <= 10,
-                     "root6(1e6): expected ~10, got %v", approx)
+    "root6(1e6): expected ~10, got %v", approx)
 }
 
 // ==================== 类型转换 ====================
@@ -601,7 +600,7 @@ test_pack_unpack :: proc(t: ^testing.T) {
     err = mp_unpack(&b, 1, .MP_MSB_FIRST, 1, .MP_BIG_ENDIAN, 0, buf[:written])
     if !expect_ok(t, err, "unpack")  do return
     testing.expectf(t, mp_cmp_d(&b, 0x12) == .MP_EQ,
-                     "unpack: expected 0x12, got %v", mp_to_string(&b))
+    "unpack: expected 0x12, got %v", mp_to_string(&b))
 }
 
 // ==================== 进制转换 ====================
@@ -615,7 +614,7 @@ test_radix :: proc(t: ^testing.T) {
     err = mp_from_string(&a, "12345"); if !expect_ok(t, err, "from dec")  do return
     str, err2 := mp_to_radix(&a, 10)
     testing.expectf(t, err2 == .MP_OKAY && str == "12345",
-                     "dec roundtrip: expected 12345, got %v (err=%v)", str, err2)
+    "dec roundtrip: expected 12345, got %v (err=%v)", str, err2)
 
     // 十六进制
     err = mp_read_radix(&a, "1A2B3C", 16); if !expect_ok(t, err, "read hex")  do return

@@ -333,3 +333,6 @@ odingo/odingo.7z
 .graphify_analysis.json
 /graphify-out
 /src/graphify-out
+phpsdk-starter.bat
+phpsdk-vs17-x64.bat
+phpsdk_setshell.bat

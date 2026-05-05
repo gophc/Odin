@@ -1,9 +1,6 @@
 // libtommath.odin - Pure Odin rewrite of libtommath
 package godin
 
-import "core:math"
-import "core:mem"
-
 // --------------- Constants ---------------
 DIGIT_BIT :: 28
 MP_DIGIT_MAX :: (1 << DIGIT_BIT) - 1
@@ -15,12 +12,12 @@ MP_PREC :: 32
 // Cutoffs (matching original defaults)
 MP_MUL_KARATSUBA_CUTOFF : int = 80
 MP_SQR_KARATSUBA_CUTOFF : int = 120
-MP_MUL_TOOM_CUTOFF      : int = 350
-MP_SQR_TOOM_CUTOFF      : int = 400
+MP_MUL_TOOM_CUTOFF : int = 350
+MP_SQR_TOOM_CUTOFF : int = 400
 
 // --------------- Types ---------------
 mp_digit :: u32
-mp_word  :: u64
+mp_word :: u64
 
 mp_sign :: enum u8 {
     MP_ZPOS = 0,
@@ -55,21 +52,23 @@ mp_endian :: enum int {
 }
 
 mp_int :: struct {
-    used:  int,
+    used: int,
     alloc: int,
-    sign:  mp_sign,
-    dp:    []mp_digit,
+    sign: mp_sign,
+    dp: []mp_digit,
 }
 
 // --------------- Helpers ---------------
 @(private)
 s_mp_zero_digs :: proc(d: []mp_digit) {
-    for &v in d { v = 0 }
+    for &v in d {
+        v = 0
+    }
 }
 
 @(private)
 s_mp_zero_buf :: proc(mem: rawptr, size: int) {
-    // Not heavily used, skip or implement with mem.set
+// Not heavily used, skip or implement with mem.set
 }
 
 @(private)
@@ -138,7 +137,7 @@ mp_grow :: proc(a: ^mp_int, size: int) -> mp_err {
 mp_zero :: proc(a: ^mp_int) {
     a.used = 0
     a.sign = .MP_ZPOS
-    // Digits are effectively zero, no need to clear.
+// Digits are effectively zero, no need to clear.
 }
 
 mp_set :: proc(a: ^mp_int, b: mp_digit) {
@@ -153,7 +152,7 @@ mp_set :: proc(a: ^mp_int, b: mp_digit) {
 }
 
 mp_clamp :: proc(a: ^mp_int) {
-    for a.used > 0 && a.dp[a.used-1] == 0 {
+    for a.used > 0 && a.dp[a.used - 1] == 0 {
         a.used -= 1
     }
     if a.used == 0 {
@@ -204,10 +203,14 @@ mp_neg :: proc(a: ^mp_int, b: ^mp_int) -> mp_err {
 
 mp_cmp :: proc(a: ^mp_int, b: ^mp_int) -> mp_ord {
     if a.sign != b.sign {
-        if a.sign == .MP_NEG { return .MP_LT } else { return .MP_GT }
+        if a.sign == .MP_NEG {
+            return .MP_LT
+        } else {
+            return .MP_GT
+        }
     }
     if a.sign == .MP_NEG {
-        // both negative: compare magnitudes, then flip
+    // both negative: compare magnitudes, then flip
         cmp := mp_cmp_mag(a, b)
         if cmp == .MP_LT do return .MP_GT
         if cmp == .MP_GT do return .MP_LT
@@ -230,7 +233,11 @@ mp_cmp_mag :: proc(a: ^mp_int, b: ^mp_int) -> mp_ord {
 
 mp_cmp_d :: proc(a: ^mp_int, b: mp_digit) -> mp_ord {
     if a.used == 0 {
-        if b == 0 { return .MP_EQ } else { return .MP_LT }
+        if b == 0 {
+            return .MP_EQ
+        } else {
+            return .MP_LT
+        }
     }
     if a.sign == .MP_NEG do return .MP_LT
     if a.used > 1 do return .MP_GT
@@ -242,9 +249,11 @@ mp_cmp_d :: proc(a: ^mp_int, b: mp_digit) -> mp_ord {
 
 @(private="file")
 s_mp_add :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int) -> mp_err {
-    // Ensure a is the larger
+// Ensure a is the larger
     aa, bb := a, b
-    if aa.used < bb.used { aa, bb = bb, aa }
+    if aa.used < bb.used {
+        aa, bb = bb, aa
+    }
     min := bb.used
     max := aa.used
     err := mp_grow(c, max + 1); if err != .MP_OKAY do return err
@@ -270,7 +279,7 @@ s_mp_add :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int) -> mp_err {
 
 @(private="file")
 s_mp_sub :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int) -> mp_err {
-    // assumes |a| >= |b|
+// assumes |a| >= |b|
     err := mp_grow(c, a.used); if err != .MP_OKAY do return err
     oldused := c.used
     c.used = a.used
@@ -279,12 +288,12 @@ s_mp_sub :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int) -> mp_err {
     for i = 0; i < b.used; i += 1 {
         v := a.dp[i] - b.dp[i] - u
         c.dp[i] = v & MP_MASK
-        u = (v >> (size_of(mp_digit)*8-1)) & 1 // borrow
+        u = (v >> (size_of(mp_digit) * 8 - 1)) & 1 // borrow
     }
     for ; i < a.used; i += 1 {
         v := a.dp[i] - u
         c.dp[i] = v & MP_MASK
-        u = (v >> (size_of(mp_digit)*8-1)) & 1
+        u = (v >> (size_of(mp_digit) * 8 - 1)) & 1
     }
     if c.used < oldused do s_mp_zero_digs(c.dp[c.used:oldused])
     mp_clamp(c)
@@ -335,7 +344,7 @@ mp_add_d :: proc(a: ^mp_int, b: mp_digit, c: ^mp_int) -> mp_err {
     }
     err = mp_grow(c, a.used + 1); if err != .MP_OKAY do return err
     if a.sign == .MP_NEG && (a.used > 1 || a.dp[0] >= b) {
-        // a is negative and |a| >= b, so result is negative
+    // a is negative and |a| >= b, so result is negative
         a2 := a^; a2.sign = .MP_ZPOS
         err = mp_sub_d(&a2, b, c)
         c.sign = .MP_NEG
@@ -354,7 +363,7 @@ mp_add_d :: proc(a: ^mp_int, b: mp_digit, c: ^mp_int) -> mp_err {
         c.dp[i] = mu
         c.used = a.used + 1
     } else {
-        // a negative, |a| < b, result positive
+    // a negative, |a| < b, result positive
         c.used = 1
         c.dp[0] = b - a.dp[0] // a.used is 1 and a.dp[0] < b
     }
@@ -379,7 +388,7 @@ mp_sub_d :: proc(a: ^mp_int, b: mp_digit, c: ^mp_int) -> mp_err {
     }
     err = mp_grow(c, a.used + 1); if err != .MP_OKAY do return err
     if a.sign == .MP_NEG {
-        // -a - b = -(a + b)
+    // -a - b = -(a + b)
         a2 := a^; a2.sign = .MP_ZPOS
         err = mp_add_d(&a2, b, c)
         c.sign = .MP_NEG
@@ -388,7 +397,7 @@ mp_sub_d :: proc(a: ^mp_int, b: mp_digit, c: ^mp_int) -> mp_err {
     }
     oldused = c.used
     if a.used == 1 && a.dp[0] < b || a.used == 0 {
-        // result negative
+    // result negative
         if a.used == 1 {
             c.dp[0] = b - a.dp[0]
         } else {
@@ -397,7 +406,7 @@ mp_sub_d :: proc(a: ^mp_int, b: mp_digit, c: ^mp_int) -> mp_err {
         c.sign = .MP_NEG
         c.used = 1
     } else {
-        // |a| >= b, result positive
+    // |a| >= b, result positive
         i: int
         mu := b
         c.sign = .MP_ZPOS
@@ -405,7 +414,7 @@ mp_sub_d :: proc(a: ^mp_int, b: mp_digit, c: ^mp_int) -> mp_err {
         for i = 0; i < a.used; i += 1 {
             v := a.dp[i] - mu
             c.dp[i] = v & MP_MASK
-            mu = (v >> (size_of(mp_digit)*8-1)) & 1
+            mu = (v >> (size_of(mp_digit) * 8 - 1)) & 1
         }
     }
     if c.used < oldused do s_mp_zero_digs(c.dp[c.used:oldused])
@@ -416,9 +425,12 @@ mp_sub_d :: proc(a: ^mp_int, b: mp_digit, c: ^mp_int) -> mp_err {
 mp_mul_d :: proc(a: ^mp_int, b: mp_digit, c: ^mp_int) -> mp_err {
     if b == 1 do return mp_copy(a, c)
     if b == 2 do return mp_mul_2(a, c)
-    if b != 0 && (b & (b-1)) == 0 { // power of two
+    if b != 0 && (b & (b - 1)) == 0 {
+    // power of two
         ix := 1
-        for ix < DIGIT_BIT && b != (1 << uint(ix)) { ix += 1 }
+        for ix < DIGIT_BIT && b != (1 << uint(ix)) {
+            ix += 1
+        }
         return mp_mul_2d(a, ix, c)
     }
     err := mp_grow(c, a.used + 1); if err != .MP_OKAY do return err
@@ -532,7 +544,9 @@ mp_mod_2d :: proc(a: ^mp_int, b: int, c: ^mp_int) -> mp_err {
     if b >= a.used * DIGIT_BIT do return mp_copy(a, c)
     err := mp_copy(a, c); if err != .MP_OKAY do return err
     x := b / DIGIT_BIT
-    if b % DIGIT_BIT != 0 { x += 1 }
+    if b % DIGIT_BIT != 0 {
+        x += 1
+    }
     s_mp_zero_digs(c.dp[x:])
     mask := mp_digit(1 << uint(b % DIGIT_BIT)) - 1
     c.dp[b / DIGIT_BIT] &= mask
@@ -579,11 +593,13 @@ mp_count_bits :: proc(a: ^mp_int) -> int {
 mp_cnt_lsb :: proc(a: ^mp_int) -> int {
     if a.used == 0 do return 0
     x: int
-    for x < a.used && a.dp[x] == 0 { x += 1 }
+    for x < a.used && a.dp[x] == 0 {
+        x += 1
+    }
     q := a.dp[x]
     x *= DIGIT_BIT
     if (q & 1) == 0 {
-        lnz := [16]byte{4,0,1,0,2,0,1,0,3,0,1,0,2,0,1,0}
+        lnz := [16]byte{ 4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0 }
         p: mp_digit
         for {
             p = q & 15
@@ -607,8 +623,8 @@ mp_mul :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int) -> mp_err {
             return s_mp_sqr_toom(a, c)
         } else if a.used >= MP_SQR_KARATSUBA_CUTOFF {
             return s_mp_sqr_karatsuba(a, c)
-        } else if (a.used*2+1) < int(1 << (size_of(mp_word)*8 - 2*DIGIT_BIT + 1)) &&
-                  a.used < int(1 << (size_of(mp_word)*8 - 2*DIGIT_BIT)) {
+        } else if (a.used * 2 + 1) < int(1 << (size_of(mp_word) * 8 - 2 * DIGIT_BIT + 1)) &&
+        a.used < int(1 << (size_of(mp_word) * 8 - 2 * DIGIT_BIT)) {
             return s_mp_sqr_comba(a, c)
         }
         return s_mp_sqr(a, c)
@@ -616,14 +632,14 @@ mp_mul :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int) -> mp_err {
     // a != b
     min := min(a.used, b.used)
     max := max(a.used, b.used)
-    if min >= MP_MUL_KARATSUBA_CUTOFF && max/2 >= MP_MUL_KARATSUBA_CUTOFF && max >= 2*min {
+    if min >= MP_MUL_KARATSUBA_CUTOFF && max / 2 >= MP_MUL_KARATSUBA_CUTOFF && max >= 2 * min {
         return s_mp_mul_balance(a, b, c)
     } else if min >= MP_MUL_TOOM_CUTOFF {
         return s_mp_mul_toom(a, b, c)
     } else if min >= MP_MUL_KARATSUBA_CUTOFF {
         return s_mp_mul_karatsuba(a, b, c)
-    } else if digs < int(1 << (size_of(mp_word)*8 - 2*DIGIT_BIT + 1)) &&
-              min <= int(1 << (size_of(mp_word)*8 - 2*DIGIT_BIT)) {
+    } else if digs < int(1 << (size_of(mp_word) * 8 - 2 * DIGIT_BIT + 1)) &&
+    min <= int(1 << (size_of(mp_word) * 8 - 2 * DIGIT_BIT)) {
         return s_mp_mul_comba(a, b, c, digs)
     }
     return s_mp_mul(a, b, c, digs) // fallback
@@ -639,12 +655,12 @@ s_mp_mul :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int, digs: int) -> mp_err {
         u: mp_digit
         pb := min(b.used, digs - ix)
         for iy := 0; iy < pb; iy += 1 {
-            r := u64(t.dp[ix+iy]) + u64(a.dp[ix])*u64(b.dp[iy]) + u64(u)
-            t.dp[ix+iy] = mp_digit(r & MP_MASK)
+            r := u64(t.dp[ix + iy]) + u64(a.dp[ix]) * u64(b.dp[iy]) + u64(u)
+            t.dp[ix + iy] = mp_digit(r & MP_MASK)
             u = mp_digit(r >> DIGIT_BIT)
         }
-        if ix+pb < digs {
-            t.dp[ix+pb] = u
+        if ix + pb < digs {
+            t.dp[ix + pb] = u
         }
     }
     mp_clamp(&t)
@@ -660,11 +676,11 @@ s_mp_mul_comba :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int, digs: int) -> mp_err 
     W := make([]mp_digit, pa); defer delete(W)
     _W: mp_word
     for ix := 0; ix < pa; ix += 1 {
-        ty := min(b.used-1, ix)
+        ty := min(b.used - 1, ix)
         tx := ix - ty
         iy := min(a.used - tx, ty + 1)
         for iz := 0; iz < iy; iz += 1 {
-            _W += u64(a.dp[tx+iz]) * u64(b.dp[ty-iz])
+            _W += u64(a.dp[tx + iz]) * u64(b.dp[ty - iz])
         }
         W[ix] = mp_digit(_W & MP_MASK)
         _W >>= DIGIT_BIT
@@ -681,21 +697,35 @@ s_mp_mul_comba :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int, digs: int) -> mp_err 
 s_mp_mul_karatsuba :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int) -> mp_err {
     B := min(a.used, b.used) / 2
     if B == 0 {
-        // fallback
+    // fallback
         return s_mp_mul(a, b, c, a.used + b.used + 1)
     }
     x0, x1, y0, y1, t1, x0y0, x1y1: mp_int
     defer mp_clear_multi(&x0y0, &x1y1, &t1, &y1, &y0, &x1, &x0, nil)
     // init sizes
-    if mp_init_size(&x0, B) != .MP_OKAY { return .MP_MEM }
-    if mp_init_size(&x1, a.used - B) != .MP_OKAY { return .MP_MEM }
-    if mp_init_size(&y0, B) != .MP_OKAY { return .MP_MEM }
-    if mp_init_size(&y1, b.used - B) != .MP_OKAY { return .MP_MEM }
-    if mp_init_size(&t1, B*2) != .MP_OKAY { return .MP_MEM }
-    if mp_init_size(&x0y0, B*2) != .MP_OKAY { return .MP_MEM }
-    if mp_init_size(&x1y1, B*2) != .MP_OKAY { return .MP_MEM }
+    if mp_init_size(&x0, B) != .MP_OKAY {
+        return .MP_MEM
+    }
+    if mp_init_size(&x1, a.used - B) != .MP_OKAY {
+        return .MP_MEM
+    }
+    if mp_init_size(&y0, B) != .MP_OKAY {
+        return .MP_MEM
+    }
+    if mp_init_size(&y1, b.used - B) != .MP_OKAY {
+        return .MP_MEM
+    }
+    if mp_init_size(&t1, B * 2) != .MP_OKAY {
+        return .MP_MEM
+    }
+    if mp_init_size(&x0y0, B * 2) != .MP_OKAY {
+        return .MP_MEM
+    }
+    if mp_init_size(&x1y1, B * 2) != .MP_OKAY {
+        return .MP_MEM
+    }
 
-    
+
     x0.used = B; y0.used = B
     x1.used = a.used - B; y1.used = b.used - B
     s_mp_copy_digs(x0.dp, a.dp, B)
@@ -712,7 +742,7 @@ s_mp_mul_karatsuba :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int) -> mp_err {
     mp_add(&x0y0, &x1y1, &x0) or_return
     s_mp_sub(&t1, &x0, &t1) or_return
     mp_lshd(&t1, B) or_return
-    mp_lshd(&x1y1, B*2) or_return
+    mp_lshd(&x1y1, B * 2) or_return
     mp_add(&x0y0, &t1, &t1) or_return
     mp_add(&t1, &x1y1, c) or_return
     return .MP_OKAY
@@ -720,7 +750,7 @@ s_mp_mul_karatsuba :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int) -> mp_err {
 
 @(private="file")
 s_mp_mul_toom :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int) -> mp_err {
-    // Toom-3
+// Toom-3
     B := min(a.used, b.used) / 3
     S1, S2, T1: mp_int; defer mp_clear_multi(&S1, &S2, &T1, nil)
     mp_init_multi(&S1, &S2, &T1, nil) or_return
@@ -728,19 +758,19 @@ s_mp_mul_toom :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int) -> mp_err {
     defer mp_clear_multi(&a0, &a1, &a2, &b0, &b1, &b2, nil)
     mp_init_size(&a0, B) or_return
     mp_init_size(&a1, B) or_return
-    mp_init_size(&a2, a.used - 2*B) or_return
-    a0.used = B; a1.used = B; a2.used = a.used - 2*B
+    mp_init_size(&a2, a.used - 2 * B) or_return
+    a0.used = B; a1.used = B; a2.used = a.used - 2 * B
     s_mp_copy_digs(a0.dp, a.dp, B)
     s_mp_copy_digs(a1.dp, a.dp[B:], B)
-    s_mp_copy_digs(a2.dp, a.dp[2*B:], a2.used)
+    s_mp_copy_digs(a2.dp, a.dp[2 * B:], a2.used)
     mp_clamp(&a0); mp_clamp(&a1); mp_clamp(&a2)
     mp_init_size(&b0, B) or_return
     mp_init_size(&b1, B) or_return
-    mp_init_size(&b2, b.used - 2*B) or_return
-    b0.used = B; b1.used = B; b2.used = b.used - 2*B
+    mp_init_size(&b2, b.used - 2 * B) or_return
+    b0.used = B; b1.used = B; b2.used = b.used - 2 * B
     s_mp_copy_digs(b0.dp, b.dp, B)
     s_mp_copy_digs(b1.dp, b.dp[B:], B)
-    s_mp_copy_digs(b2.dp, b.dp[2*B:], b2.used)
+    s_mp_copy_digs(b2.dp, b.dp[2 * B:], b2.used)
     mp_clamp(&b0); mp_clamp(&b1); mp_clamp(&b2)
 
     // evaluations
@@ -775,10 +805,10 @@ s_mp_mul_toom :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int) -> mp_err {
     mp_mul_2(&b1, &T1) or_return
     mp_sub(&S2, &T1, &S2) or_return
     mp_sub(&a1, &S2, &a1) or_return
-    mp_lshd(&b1, 4*B) or_return
-    mp_lshd(&S2, 3*B) or_return
+    mp_lshd(&b1, 4 * B) or_return
+    mp_lshd(&S2, 3 * B) or_return
     mp_add(&b1, &S2, &b1) or_return
-    mp_lshd(&S1, 2*B) or_return
+    mp_lshd(&S1, 2 * B) or_return
     mp_add(&b1, &S1, &b1) or_return
     mp_lshd(&a1, B) or_return
     mp_add(&b1, &a1, &b1) or_return
@@ -789,12 +819,14 @@ s_mp_mul_toom :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int) -> mp_err {
 @(private="file")
 s_mp_mul_balance :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int) -> mp_err {
     aa, bb := a, b
-    if aa.used < bb.used { aa, bb = bb, aa }
+    if aa.used < bb.used {
+        aa, bb = bb, aa
+    }
     nblocks := aa.used / bb.used
     bsize := bb.used
     a0, tmp, r: mp_int
     defer mp_clear_multi(&a0, &tmp, &r, nil)
-    mp_init_size(&a0, bsize+2) or_return
+    mp_init_size(&a0, bsize + 2) or_return
     mp_init_multi(&tmp, &r, nil) or_return
     j: int
     for i := 0; i < nblocks; i += 1 {
@@ -803,7 +835,7 @@ s_mp_mul_balance :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int) -> mp_err {
         j += a0.used
         mp_clamp(&a0)
         mp_mul(&a0, bb, &tmp) or_return
-        mp_lshd(&tmp, bsize*i) or_return
+        mp_lshd(&tmp, bsize * i) or_return
         mp_add(&r, &tmp, &r) or_return
     }
     if j < aa.used {
@@ -811,7 +843,7 @@ s_mp_mul_balance :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int) -> mp_err {
         s_mp_copy_digs(a0.dp, aa.dp[j:], a0.used)
         mp_clamp(&a0)
         mp_mul(&a0, bb, &tmp) or_return
-        mp_lshd(&tmp, bsize*nblocks) or_return
+        mp_lshd(&tmp, bsize * nblocks) or_return
         mp_add(&r, &tmp, &r) or_return
     }
     mp_exch(&r, c)
@@ -823,23 +855,23 @@ s_mp_mul_balance :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int) -> mp_err {
 s_mp_sqr :: proc(a: ^mp_int, b: ^mp_int) -> mp_err {
     t: mp_int; defer mp_clear(&t)
     pa := a.used
-    mp_init_size(&t, 2*pa+1) or_return
-    t.used = 2*pa+1
+    mp_init_size(&t, 2 * pa + 1) or_return
+    t.used = 2 * pa + 1
     for ix := 0; ix < pa; ix += 1 {
-        rr := u64(t.dp[2*ix]) + u64(a.dp[ix])*u64(a.dp[ix])
-        t.dp[ix+ix] = mp_digit(rr & MP_MASK)
+        rr := u64(t.dp[2 * ix]) + u64(a.dp[ix]) * u64(a.dp[ix])
+        t.dp[ix + ix] = mp_digit(rr & MP_MASK)
         u := mp_digit(rr >> DIGIT_BIT)
-        for iy := ix+1; iy < pa; iy += 1 {
+        for iy := ix + 1; iy < pa; iy += 1 {
             r := u64(a.dp[ix]) * u64(a.dp[iy])
-            r = u64(t.dp[ix+iy]) + r + r + u64(u)
-            t.dp[ix+iy] = mp_digit(r & MP_MASK)
+            r = u64(t.dp[ix + iy]) + r + r + u64(u)
+            t.dp[ix + iy] = mp_digit(r & MP_MASK)
             u = mp_digit(r >> DIGIT_BIT)
         }
         // propagate remaining u
         iy := pa
         for u != 0 {
-            r := u64(t.dp[ix+iy]) + u64(u)
-            t.dp[ix+iy] = mp_digit(r & MP_MASK)
+            r := u64(t.dp[ix + iy]) + u64(u)
+            t.dp[ix + iy] = mp_digit(r & MP_MASK)
             u = mp_digit(r >> DIGIT_BIT)
             iy += 1
         }
@@ -856,17 +888,17 @@ s_mp_sqr_comba :: proc(a: ^mp_int, b: ^mp_int) -> mp_err {
     W := make([]mp_digit, pa); defer delete(W)
     W1: mp_word
     for ix := 0; ix < pa; ix += 1 {
-        ty := min(a.used-1, ix)
+        ty := min(a.used - 1, ix)
         tx := ix - ty
         iy := min(a.used - tx, ty + 1)
-        iy = min(iy, (ty - tx + 1)/2)
+        iy = min(iy, (ty - tx + 1) / 2)
         _W: mp_word
         for iz := 0; iz < iy; iz += 1 {
-            _W += u64(a.dp[tx+iz]) * u64(a.dp[ty-iz])
+            _W += u64(a.dp[tx + iz]) * u64(a.dp[ty - iz])
         }
         _W = _W + _W + W1
         if (uint(ix) & 1) == 0 {
-            _W += u64(a.dp[ix>>1]) * u64(a.dp[ix>>1])
+            _W += u64(a.dp[ix >> 1]) * u64(a.dp[ix >> 1])
         }
         W[ix] = mp_digit(_W & MP_MASK)
         W1 = _W >> DIGIT_BIT
@@ -887,10 +919,10 @@ s_mp_sqr_karatsuba :: proc(a: ^mp_int, b: ^mp_int) -> mp_err {
     defer mp_clear_multi(&x1x1, &x0x0, &t2, &t1, &x1, &x0, nil)
     mp_init_size(&x0, B) or_return
     mp_init_size(&x1, a.used - B) or_return
-    mp_init_size(&t1, a.used*2) or_return
-    mp_init_size(&t2, a.used*2) or_return
-    mp_init_size(&x0x0, B*2) or_return
-    mp_init_size(&x1x1, (a.used - B)*2) or_return
+    mp_init_size(&t1, a.used * 2) or_return
+    mp_init_size(&t2, a.used * 2) or_return
+    mp_init_size(&x0x0, B * 2) or_return
+    mp_init_size(&x1x1, (a.used - B) * 2) or_return
     x0.used = B; x1.used = a.used - B
     s_mp_copy_digs(x0.dp, a.dp, B)
     s_mp_copy_digs(x1.dp, a.dp[B:], x1.used)
@@ -902,7 +934,7 @@ s_mp_sqr_karatsuba :: proc(a: ^mp_int, b: ^mp_int) -> mp_err {
     s_mp_add(&x0x0, &x1x1, &t2) or_return
     s_mp_sub(&t1, &t2, &t1) or_return
     mp_lshd(&t1, B) or_return
-    mp_lshd(&x1x1, B*2) or_return
+    mp_lshd(&x1x1, B * 2) or_return
     mp_add(&x0x0, &t1, &t1) or_return
     mp_add(&t1, &x1x1, b) or_return
     return .MP_OKAY
@@ -916,11 +948,11 @@ s_mp_sqr_toom :: proc(a: ^mp_int, b: ^mp_int) -> mp_err {
     mp_init(&S0) or_return
     mp_init_size(&a0, B) or_return
     mp_init_size(&a1, B) or_return
-    mp_init_size(&a2, a.used - 2*B) or_return
-    a0.used = B; a1.used = B; a2.used = a.used - 2*B
+    mp_init_size(&a2, a.used - 2 * B) or_return
+    a0.used = B; a1.used = B; a2.used = a.used - 2 * B
     s_mp_copy_digs(a0.dp, a.dp, B)
     s_mp_copy_digs(a1.dp, a.dp[B:], B)
-    s_mp_copy_digs(a2.dp, a.dp[2*B:], a2.used)
+    s_mp_copy_digs(a2.dp, a.dp[2 * B:], a2.used)
     mp_clamp(&a0); mp_clamp(&a1); mp_clamp(&a2)
     mp_mul(&a0, &a0, &S0) or_return
     mp_add(&a0, &a2, &a0) or_return  // a0 = a0+a2
@@ -937,9 +969,9 @@ s_mp_sqr_toom :: proc(a: ^mp_int, b: ^mp_int) -> mp_err {
     mp_sub(&a0, &a1, &a0) or_return
     mp_sub(b, &a2, b) or_return
     mp_sub(b, &S0, b) or_return
-    mp_lshd(&a2, 4*B) or_return
-    mp_lshd(&a1, 3*B) or_return
-    mp_lshd(b, 2*B) or_return
+    mp_lshd(&a2, 4 * B) or_return
+    mp_lshd(&a1, 3 * B) or_return
+    mp_lshd(b, 2 * B) or_return
     mp_lshd(&a0, B) or_return
     mp_add(&a2, &a1, &a2) or_return
     mp_add(&a2, b, b) or_return
@@ -957,7 +989,7 @@ mp_div :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int, d: ^mp_int) -> mp_err {
         return .MP_OKAY
     }
     // Choose recursive division (first condition always true)
-    if b.used > 2*MP_MUL_KARATSUBA_CUTOFF && b.used <= (a.used/3)*2 {
+    if b.used > 2 * MP_MUL_KARATSUBA_CUTOFF && b.used <= (a.used / 3) * 2 {
         return s_mp_div_recursive(a, b, c, d)
     }
     return s_mp_div_school(a, b, c, d)
@@ -967,8 +999,8 @@ mp_div :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int, d: ^mp_int) -> mp_err {
 s_mp_div_school :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int, d: ^mp_int) -> mp_err {
     q, x, y, t1, t2: mp_int
     defer mp_clear_multi(&q, &t1, &t2, &x, &y, nil)
-    mp_init_size(&q, a.used+2) or_return
-    q.used = a.used+2
+    mp_init_size(&q, a.used + 2) or_return
+    q.used = a.used + 2
     mp_init(&t1) or_return
     mp_init(&t2) or_return
     mp_init_copy(&x, a) or_return
@@ -976,8 +1008,8 @@ s_mp_div_school :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int, d: ^mp_int) -> mp_er
     neg := a.sign != b.sign
     x.sign = .MP_ZPOS; y.sign = .MP_ZPOS
     norm := mp_count_bits(&y) % DIGIT_BIT
-    if norm < DIGIT_BIT-1 {
-        norm = DIGIT_BIT-1 - norm
+    if norm < DIGIT_BIT - 1 {
+        norm = DIGIT_BIT - 1 - norm
         mp_mul_2d(&x, norm, &x) or_return
         mp_mul_2d(&y, norm, &y) or_return
     } else {
@@ -985,44 +1017,46 @@ s_mp_div_school :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int, d: ^mp_int) -> mp_er
     }
     n := x.used - 1
     t := y.used - 1
-    mp_lshd(&y, n-t) or_return
+    mp_lshd(&y, n - t) or_return
     for mp_cmp(&x, &y) != .MP_LT {
-        q.dp[n-t] += 1
+        q.dp[n - t] += 1
         mp_sub(&x, &y, &x) or_return
     }
-    mp_rshd(&y, n-t)
-    for i := n; i >= t+1; i -= 1 {
+    mp_rshd(&y, n - t)
+    for i := n; i >= t + 1; i -= 1 {
         if i > x.used do continue
         if x.dp[i] == y.dp[t] {
-            q.dp[i-t-1] = MP_MASK
+            q.dp[i - t - 1] = MP_MASK
         } else {
-            tmp := (u64(x.dp[i]) << DIGIT_BIT) | u64(x.dp[i-1])
+            tmp := (u64(x.dp[i]) << DIGIT_BIT) | u64(x.dp[i - 1])
             tmp /= u64(y.dp[t])
-            if tmp > MP_MASK { tmp = MP_MASK }
-            q.dp[i-t-1] = mp_digit(tmp)
+            if tmp > MP_MASK {
+                tmp = MP_MASK
+            }
+            q.dp[i - t - 1] = mp_digit(tmp)
         }
-        q.dp[i-t-1] = (q.dp[i-t-1] + 1) & MP_MASK
+        q.dp[i - t - 1] = (q.dp[i - t - 1] + 1) & MP_MASK
         for {
-            q.dp[i-t-1] = (q.dp[i-t-1] - 1) & MP_MASK
+            q.dp[i - t - 1] = (q.dp[i - t - 1] - 1) & MP_MASK
             mp_zero(&t1)
-            t1.dp[0] = y.dp[t-1] if t-1 >= 0 else 0
+            t1.dp[0] = y.dp[t - 1] if t - 1 >= 0 else 0
             t1.dp[1] = y.dp[t]
             t1.used = 2
-            mp_mul_d(&t1, q.dp[i-t-1], &t1) or_return
-            t2.dp[0] = x.dp[i-2] if i-2 >= 0 else 0
-            t2.dp[1] = x.dp[i-1]
+            mp_mul_d(&t1, q.dp[i - t - 1], &t1) or_return
+            t2.dp[0] = x.dp[i - 2] if i - 2 >= 0 else 0
+            t2.dp[1] = x.dp[i - 1]
             t2.dp[2] = x.dp[i]
             t2.used = 3
             if mp_cmp_mag(&t1, &t2) != .MP_GT do break
         }
-        mp_mul_d(&y, q.dp[i-t-1], &t1) or_return
-        mp_lshd(&t1, i-t-1) or_return
+        mp_mul_d(&y, q.dp[i - t - 1], &t1) or_return
+        mp_lshd(&t1, i - t - 1) or_return
         mp_sub(&x, &t1, &x) or_return
         if x.sign == .MP_NEG {
             mp_copy(&y, &t1) or_return
-            mp_lshd(&t1, i-t-1) or_return
+            mp_lshd(&t1, i - t - 1) or_return
             mp_add(&x, &t1, &x) or_return
-            q.dp[i-t-1] = (q.dp[i-t-1] - 1) & MP_MASK
+            q.dp[i - t - 1] = (q.dp[i - t - 1] - 1) & MP_MASK
         }
     }
     x.sign = x.used == 0 ? .MP_ZPOS : a.sign
@@ -1040,15 +1074,15 @@ s_mp_div_school :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int, d: ^mp_int) -> mp_er
 
 @(private="file")
 s_mp_div_recursive :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int, d: ^mp_int) -> mp_err {
-    // simplified translation of recursive division
+// simplified translation of recursive division
     return s_mp_div_school(a, b, c, d) // fallback for brevity
-    // Full implementation would include the actual recursion.
-    // Skipping to keep file manageable; use school division.
+// Full implementation would include the actual recursion.
+// Skipping to keep file manageable; use school division.
 }
 
 @(private="file")
 s_mp_div_small :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int, d: ^mp_int) -> mp_err {
-    // not used directly after choosing first path
+// not used directly after choosing first path
     return .MP_ERR
 }
 
@@ -1060,14 +1094,20 @@ mp_div_d :: proc(a: ^mp_int, b: mp_digit, c: ^mp_int, d: ^mp_digit) -> mp_err {
         return .MP_OKAY
     }
     if b == 2 {
-        if d != nil { d^ = a.dp[0] & 1 }
+        if d != nil {
+            d^ = a.dp[0] & 1
+        }
         if c == nil do return .MP_OKAY
         return mp_div_2(a, c)
     }
-    if b != 0 && (b & (b-1)) == 0 {
+    if b != 0 && (b & (b - 1)) == 0 {
         ix := 1
-        for ix < DIGIT_BIT && b != (1 << uint(ix)) { ix += 1 }
-        if d != nil { d^ = a.dp[0] & ((1 << uint(ix)) - 1) }
+        for ix < DIGIT_BIT && b != (1 << uint(ix)) {
+            ix += 1
+        }
+        if d != nil {
+            d^ = a.dp[0] & ((1 << uint(ix)) - 1)
+        }
         if c == nil do return .MP_OKAY
         return mp_div_2d(a, ix, c, nil)
     }
@@ -1134,7 +1174,7 @@ mp_mod :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int) -> mp_err {
 mp_and :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int) -> mp_err {
     used := max(a.used, b.used) + 1
     err := mp_grow(c, used); if err != .MP_OKAY do return err
-    ac, bc, cc: mp_digit = 1, 1, 1
+    ac, bc, cc : mp_digit = 1, 1, 1
     neg := (a.sign == .MP_NEG) && (b.sign == .MP_NEG)
     for i := 0; i < used; i += 1 {
         x, y: mp_digit
@@ -1168,7 +1208,7 @@ mp_and :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int) -> mp_err {
 mp_or :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int) -> mp_err {
     used := max(a.used, b.used) + 1
     err := mp_grow(c, used); if err != .MP_OKAY do return err
-    ac, bc, cc: mp_digit = 1, 1, 1
+    ac, bc, cc : mp_digit = 1, 1, 1
     neg := (a.sign == .MP_NEG) || (b.sign == .MP_NEG)
     for i := 0; i < used; i += 1 {
         x, y: mp_digit
@@ -1199,7 +1239,7 @@ mp_or :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int) -> mp_err {
 mp_xor :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int) -> mp_err {
     used := max(a.used, b.used) + 1
     err := mp_grow(c, used); if err != .MP_OKAY do return err
-    ac, bc, cc: mp_digit = 1, 1, 1
+    ac, bc, cc : mp_digit = 1, 1, 1
     neg := a.sign != b.sign
     for i := 0; i < used; i += 1 {
         x, y: mp_digit
@@ -1260,8 +1300,12 @@ mp_gcd :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int) -> mp_err {
         mp_div_2d(&u, k, &u, nil) or_return
         mp_div_2d(&v, k, &v, nil) or_return
     }
-    if u_lsb != k { mp_div_2d(&u, u_lsb-k, &u, nil) or_return }
-    if v_lsb != k { mp_div_2d(&v, v_lsb-k, &v, nil) or_return }
+    if u_lsb != k {
+        mp_div_2d(&u, u_lsb - k, &u, nil) or_return
+    }
+    if v_lsb != k {
+        mp_div_2d(&v, v_lsb - k, &v, nil) or_return
+    }
     for v.used != 0 {
         if mp_cmp_mag(&u, &v) == .MP_GT {
             mp_exch(&u, &v)
@@ -1310,25 +1354,25 @@ s_mp_invmod :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int) -> mp_err {
     mp_init_multi(&x, &y, &u, &v, &A, &B, &C, &D, nil) or_return
     mp_mod(a, b, &x) or_return
     mp_copy(b, &y) or_return
-    if (x.used == 0 || x.dp[0]&1==0) && (y.used==0 || y.dp[0]&1==0) {
+    if (x.used == 0 || x.dp[0] & 1 == 0) && (y.used == 0 || y.dp[0] & 1 == 0) {
         return .MP_VAL
     }
     mp_copy(&x, &u) or_return
     mp_copy(&y, &v) or_return
     mp_set(&A, 1); mp_set(&D, 1)
     for {
-        for u.used != 0 && (u.dp[0]&1)==0 {
+        for u.used != 0 && (u.dp[0] & 1) == 0 {
             mp_div_2(&u, &u) or_return
-            if (A.used!=0 && A.dp[0]&1!=0) || (B.used!=0 && B.dp[0]&1!=0) {
+            if (A.used != 0 && A.dp[0] & 1 != 0) || (B.used != 0 && B.dp[0] & 1 != 0) {
                 mp_add(&A, &y, &A) or_return
                 mp_sub(&B, &x, &B) or_return
             }
             mp_div_2(&A, &A) or_return
             mp_div_2(&B, &B) or_return
         }
-        for v.used != 0 && (v.dp[0]&1)==0 {
+        for v.used != 0 && (v.dp[0] & 1) == 0 {
             mp_div_2(&v, &v) or_return
-            if (C.used!=0 && C.dp[0]&1!=0) || (D.used!=0 && D.dp[0]&1!=0) {
+            if (C.used != 0 && C.dp[0] & 1 != 0) || (D.used != 0 && D.dp[0] & 1 != 0) {
                 mp_add(&C, &y, &C) or_return
                 mp_sub(&D, &x, &D) or_return
             }
@@ -1369,16 +1413,16 @@ s_mp_invmod_odd :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int) -> mp_err {
     mp_copy(&y, &v) or_return
     mp_set(&D, 1)
     for {
-        for u.used != 0 && (u.dp[0]&1)==0 {
+        for u.used != 0 && (u.dp[0] & 1) == 0 {
             mp_div_2(&u, &u) or_return
-            if B.used != 0 && (B.dp[0]&1) != 0 {
+            if B.used != 0 && (B.dp[0] & 1) != 0 {
                 mp_sub(&B, &x, &B) or_return
             }
             mp_div_2(&B, &B) or_return
         }
-        for v.used != 0 && (v.dp[0]&1)==0 {
+        for v.used != 0 && (v.dp[0] & 1) == 0 {
             mp_div_2(&v, &v) or_return
-            if D.used != 0 && (D.dp[0]&1) != 0 {
+            if D.used != 0 && (D.dp[0] & 1) != 0 {
                 mp_sub(&D, &x, &D) or_return
             }
             mp_div_2(&D, &D) or_return
@@ -1432,7 +1476,7 @@ mp_sqrt :: proc(arg: ^mp_int, ret: ^mp_int) -> mp_err {
     defer mp_clear(&t1); defer mp_clear(&t2)
     mp_init_copy(&t1, arg) or_return
     mp_init(&t2) or_return
-    mp_rshd(&t1, t1.used/2)
+    mp_rshd(&t1, t1.used / 2)
     mp_div(arg, &t1, &t2, nil) or_return
     mp_add(&t1, &t2, &t1) or_return
     mp_div_2(&t1, &t1) or_return
@@ -1447,7 +1491,7 @@ mp_sqrt :: proc(arg: ^mp_int, ret: ^mp_int) -> mp_err {
 }
 
 mp_root_n :: proc(a: ^mp_int, b: int, c: ^mp_int) -> mp_err {
-    // See original; implement Newton's method
+// See original; implement Newton's method
     if b < 0 || uint(b) > MP_MASK do return .MP_VAL
     if (b & 1) == 0 && a.sign == .MP_NEG do return .MP_VAL
     t1, t2, t3, a_: mp_int
@@ -1455,7 +1499,7 @@ mp_root_n :: proc(a: ^mp_int, b: int, c: ^mp_int) -> mp_err {
     mp_init_multi(&t1, &t2, &t3, nil) or_return
     a_ = a^; a_.sign = .MP_ZPOS
     ilog2 := mp_count_bits(&a_)
-    if b > max(int)/2 {
+    if b > max(int) / 2 {
         mp_set(c, 1); c.sign = a.sign; return .MP_OKAY
     }
     if ilog2 < b {
@@ -1469,7 +1513,7 @@ mp_root_n :: proc(a: ^mp_int, b: int, c: ^mp_int) -> mp_err {
     mp_2expt(&t2, ilog2) or_return
     for {
         mp_copy(&t2, &t1) or_return
-        mp_expt_n(&t1, b-1, &t3) or_return
+        mp_expt_n(&t1, b - 1, &t3) or_return
         mp_mul(&t3, &t1, &t2) or_return
         mp_sub(&t2, &a_, &t2) or_return
         mp_mul_d(&t3, mp_digit(b), &t3) or_return
@@ -1482,16 +1526,22 @@ mp_root_n :: proc(a: ^mp_int, b: int, c: ^mp_int) -> mp_err {
     for {
         mp_expt_n(&t1, b, &t2) or_return
         cmp := mp_cmp(&t2, &a_)
-        if cmp == .MP_EQ { mp_exch(&t1, c); c.sign = a.sign; return .MP_OKAY }
+        if cmp == .MP_EQ {
+            mp_exch(&t1, c); c.sign = a.sign; return .MP_OKAY
+        }
         if cmp == .MP_LT {
             mp_add_d(&t1, 1, &t1) or_return
-        } else { break }
+        } else {
+            break
+        }
     }
     for {
         mp_expt_n(&t1, b, &t2) or_return
         if mp_cmp(&t2, &a_) == .MP_GT {
             mp_sub_d(&t1, 1, &t1) or_return
-        } else { break }
+        } else {
+            break
+        }
     }
     mp_exch(&t1, c)
     c.sign = a.sign
@@ -1529,16 +1579,16 @@ mp_dr_setup :: proc(a: ^mp_int, d: ^mp_digit) {
 }
 mp_dr_reduce :: proc(x: ^mp_int, n: ^mp_int, k: mp_digit) -> mp_err {
     m := n.used
-    err := mp_grow(x, m+m); if err != .MP_OKAY do return err
+    err := mp_grow(x, m + m); if err != .MP_OKAY do return err
     for {
         mu: mp_digit
         for i := 0; i < m; i += 1 {
-            r := u64(x.dp[i+m])*u64(k) + u64(x.dp[i]) + u64(mu)
+            r := u64(x.dp[i + m]) * u64(k) + u64(x.dp[i]) + u64(mu)
             x.dp[i] = mp_digit(r & MP_MASK)
             mu = mp_digit(r >> DIGIT_BIT)
         }
         x.dp[m] = mu
-        s_mp_zero_digs(x.dp[m+1:])
+        s_mp_zero_digs(x.dp[m + 1:])
         mp_clamp(x)
         if mp_cmp_mag(x, n) == .MP_LT do break
         s_mp_sub(x, n, x) or_return
@@ -1551,23 +1601,23 @@ mp_is_square :: proc(arg: ^mp_int, ret: ^bool) -> mp_err {
     ret^ = false
     if arg.sign == .MP_NEG do return .MP_VAL
     if arg.used == 0 do return .MP_OKAY
-    rem_128 := [128]u8{0,0,1,1,0,1,1,1,1,0,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,0,0,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1}
-    rem_105 := [105]u8{0,0,1,1,0,1,1,1,1,0,1,1,1,1,1,0,0,1,1,1,1,0,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,0,1,1,0,1,0,1,1,1,1,1,1,1,1,0,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,0,1,1,0,0,1,1,1,1,1,0,1,1,1,1,1,1,1,0,0,1,1,1,1}
+    rem_128 := [128]u8{ 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1 }
+    rem_105 := [105]u8{ 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1 }
     if rem_128[arg.dp[0] & 127] == 1 do return .MP_OKAY
     c: mp_digit
     mp_div_d(arg, 105, nil, &c) or_return
     if rem_105[c] == 1 do return .MP_OKAY
     t: mp_int; defer mp_clear(&t)
-    mp_init_u32(&t, 11*13*17*19*23*29*31) or_return
+    mp_init_u32(&t, 11 * 13 * 17 * 19 * 23 * 29 * 31) or_return
     mp_mod(arg, &t, &t) or_return
     r := u32(mp_get_i32(&t))
-    if ((1<<(r%11)) & 0x5C4) != 0 do return .MP_OKAY
-    if ((1<<(r%13)) & 0x9E4) != 0 do return .MP_OKAY
-    if ((1<<(r%17)) & 0x5CE8) != 0 do return .MP_OKAY
-    if ((1<<(r%19)) & 0x4F50C) != 0 do return .MP_OKAY
-    if ((1<<(r%23)) & 0x7ACCA0) != 0 do return .MP_OKAY
-    if ((1<<(r%29)) & 0xC2EDD0C) != 0 do return .MP_OKAY
-    if ((1<<(r%31)) & 0x6DE2B848) != 0 do return .MP_OKAY
+    if ((1 << (r % 11)) & 0x5C4) != 0 do return .MP_OKAY
+    if ((1 << (r % 13)) & 0x9E4) != 0 do return .MP_OKAY
+    if ((1 << (r % 17)) & 0x5CE8) != 0 do return .MP_OKAY
+    if ((1 << (r % 19)) & 0x4F50C) != 0 do return .MP_OKAY
+    if ((1 << (r % 23)) & 0x7ACCA0) != 0 do return .MP_OKAY
+    if ((1 << (r % 29)) & 0xC2EDD0C) != 0 do return .MP_OKAY
+    if ((1 << (r % 31)) & 0x6DE2B848) != 0 do return .MP_OKAY
     mp_sqrt(arg, &t) or_return
     mp_mul(&t, &t, &t) or_return
     ret^ = mp_cmp_mag(&t, arg) == .MP_EQ
@@ -1579,11 +1629,11 @@ s_mp_prime_is_divisible :: proc(a: ^mp_int, result: ^bool) -> mp_err {
     // Omitted prime table for brevity; always return false.
     result^ = false
     return .MP_OKAY
-    // The original large prime table can be included if needed.
+// The original large prime table can be included if needed.
 }
 
 mp_prime_fermat :: proc(a: ^mp_int, b: ^mp_int, result: ^bool) -> mp_err {
-    // Not implemented
+// Not implemented
     result^ = false
     return .MP_ERR
 }
@@ -1591,14 +1641,24 @@ mp_prime_miller_rabin :: proc(a: ^mp_int, b: ^mp_int, result: ^bool) -> mp_err {
     result^ = false
     return .MP_ERR
 }
-mp_prime_rabin_miller_trials :: proc(size: int) -> int { return 0 }
-mp_prime_strong_lucas_selfridge :: proc(a: ^mp_int, result: ^bool) -> mp_err { result^=false; return .MP_ERR }
-mp_prime_frobenius_underwood :: proc(a: ^mp_int, result: ^bool) -> mp_err { result^=false; return .MP_ERR }
-mp_prime_is_prime :: proc(a: ^mp_int, t: int, result: ^bool) -> mp_err { result^=false; return .MP_ERR }
-mp_prime_next_prime :: proc(a: ^mp_int, t: int, bbs_style: bool) -> mp_err { return .MP_ERR }
+mp_prime_rabin_miller_trials :: proc(size: int) -> int {
+    return 0
+}
+mp_prime_strong_lucas_selfridge :: proc(a: ^mp_int, result: ^bool) -> mp_err {
+    result^ = false; return .MP_ERR
+}
+mp_prime_frobenius_underwood :: proc(a: ^mp_int, result: ^bool) -> mp_err {
+    result^ = false; return .MP_ERR
+}
+mp_prime_is_prime :: proc(a: ^mp_int, t: int, result: ^bool) -> mp_err {
+    result^ = false; return .MP_ERR
+}
+mp_prime_next_prime :: proc(a: ^mp_int, t: int, bbs_style: bool) -> mp_err {
+    return .MP_ERR
+}
 
 // --------------- Radix conversion ---------------
-s_mp_radix_map: string = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/"
+s_mp_radix_map : string = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/"
 s_mp_radix_map_reverse := [80]u8{
     0x3e, 0xff, 0xff, 0xff, 0x3f, 0x00, 0x01, 0x02, 0x03, 0x04,
     0x05, 0x06, 0x07, 0x08, 0x09, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -1655,8 +1715,10 @@ mp_to_radix :: proc(a: ^mp_int, radix: int, allocator := context.allocator) -> (
     }
     // reverse the part after sign
     start := 0
-    if len(buf) > 0 && buf[0] == '-' { start = 1 }
-    for i, j := start, len(buf)-1; i < j; i, j = i+1, j-1 {
+    if len(buf) > 0 && buf[0] == '-' {
+        start = 1
+    }
+    for i, j := start, len(buf) - 1; i < j; i, j = i + 1, j - 1 {
         buf[i], buf[j] = buf[j], buf[i]
     }
     return string(buf[:]), .MP_OKAY
@@ -1677,21 +1739,21 @@ mp_radix_size_overestimate :: proc(a: ^mp_int, radix: int) -> (size: int, err: m
     return s_mp_radix_size_overestimate(a, radix)
 }
 
-s_log_bases := [65]u32{0,0,0x20000001,0x14309399,0x10000001,0xdc81a35,0xc611924,0xb660c9e,
-    0xaaaaaab,0xa1849cd,0x9a209a9,0x94004e1,0x8ed19c2,0x8a5ca7d,0x867a000,0x830cee3,
-    0x8000001,0x7d42d60,0x7ac8b32,0x7887847,0x7677349,0x749131f,0x72d0163,0x712f657,
-    0x6fab5db,0x6e40d1b,0x6ced0d0,0x6badbde,0x6a80e3b,0x6964c19,0x6857d31,0x6758c38,
-    0x6666667,0x657fb21,0x64a3b9f,0x63d1ab4,0x6308c92,0x624869e,0x618ff47,0x60dedea,
-    0x6034ab0,0x5f90e7b,0x5ef32cb,0x5e5b1b2,0x5dc85c3,0x5d3aa02,0x5cb19d9,0x5c2d10f,
-    0x5bacbbf,0x5b3064f,0x5ab7d68,0x5a42df0,0x59d1506,0x5962ffe,0x58f7c57,0x588f7bc,
-    0x582a000,0x57c7319,0x5766f1d,0x5709243,0x56adad9,0x565474d,0x55fd61f,0x55a85e8,
-    0x5555556,}
+s_log_bases := [65]u32{ 0, 0, 0x20000001, 0x14309399, 0x10000001, 0xdc81a35, 0xc611924, 0xb660c9e,
+0xaaaaaab, 0xa1849cd, 0x9a209a9, 0x94004e1, 0x8ed19c2, 0x8a5ca7d, 0x867a000, 0x830cee3,
+0x8000001, 0x7d42d60, 0x7ac8b32, 0x7887847, 0x7677349, 0x749131f, 0x72d0163, 0x712f657,
+0x6fab5db, 0x6e40d1b, 0x6ced0d0, 0x6badbde, 0x6a80e3b, 0x6964c19, 0x6857d31, 0x6758c38,
+0x6666667, 0x657fb21, 0x64a3b9f, 0x63d1ab4, 0x6308c92, 0x624869e, 0x618ff47, 0x60dedea,
+0x6034ab0, 0x5f90e7b, 0x5ef32cb, 0x5e5b1b2, 0x5dc85c3, 0x5d3aa02, 0x5cb19d9, 0x5c2d10f,
+0x5bacbbf, 0x5b3064f, 0x5ab7d68, 0x5a42df0, 0x59d1506, 0x5962ffe, 0x58f7c57, 0x588f7bc,
+0x582a000, 0x57c7319, 0x5766f1d, 0x5709243, 0x56adad9, 0x565474d, 0x55fd61f, 0x55a85e8,
+0x5555556, }
 
 s_mp_radix_size_overestimate :: proc(a: ^mp_int, radix: int) -> (size: int, err: mp_err) {
     if radix < 2 || radix > 64 do return 0, .MP_VAL
     if a.used == 0 do return 2, .MP_OKAY
     // power-of-two radix shortcut
-    if mp_digit(radix) != 0 && (mp_digit(radix) & (mp_digit(radix)-1)) == 0 {
+    if mp_digit(radix) != 0 && (mp_digit(radix) & (mp_digit(radix) - 1)) == 0 {
         size = s_mp_log_2expt(a, mp_digit(radix)) + 3
         return
     }
@@ -1708,7 +1770,7 @@ s_mp_radix_size_overestimate :: proc(a: ^mp_int, radix: int) -> (size: int, err:
 
 mp_log_n :: proc(a: ^mp_int, base: int, c: ^int) -> mp_err {
     if a.sign == .MP_NEG || a.used == 0 || base < 2 || uint(base) > MP_MASK do return .MP_VAL
-    if (mp_digit(base) & (mp_digit(base)-1)) == 0 {
+    if (mp_digit(base) & (mp_digit(base) - 1)) == 0 {
         c^ = s_mp_log_2expt(a, mp_digit(base))
         return .MP_OKAY
     }
@@ -1746,20 +1808,28 @@ s_mp_log_d :: proc(base: mp_digit, n: mp_digit) -> int {
     for high - low > 1 {
         mid := (low + high) >> 1
         mid_val := bracket_low * s_pow(base, mp_digit(mid - low))
-        if N < mid_val { high = mid; bracket_high = mid_val }
-        else if N > mid_val { low = mid; bracket_low = mid_val }
-        else { return mid }
+        if N < mid_val {
+            high = mid; bracket_high = mid_val
+        }
+        else if N > mid_val {
+            low = mid; bracket_low = mid_val
+        }
+        else {
+            return mid
+        }
     }
     return low if bracket_high != N else high
 }
 
 @(private="file")
 s_pow :: proc(base: mp_digit, exp: mp_digit) -> u64 {
-    result: u64 = 1
+    result : u64 = 1
     b := u64(base)
     e := exp
     for e != 0 {
-        if e & 1 != 0 { result *= b }
+        if e & 1 != 0 {
+            result *= b
+        }
         e >>= 1
         b *= b
     }
@@ -1789,18 +1859,28 @@ s_mp_log :: proc(a: ^mp_int, base: mp_digit, c: ^int) -> mp_err {
         mp_expt_n(&bi_base, mid - low, &t) or_return
         mp_mul(&bracket_low, &t, &bracket_mid) or_return
         cmp2 := mp_cmp(a, &bracket_mid)
-        if cmp2 == .MP_LT { high = mid; mp_exch(&bracket_mid, &bracket_high) }
-        else if cmp2 == .MP_GT { low = mid; mp_exch(&bracket_mid, &bracket_low) }
-        else { c^ = mid; return .MP_OKAY }
+        if cmp2 == .MP_LT {
+            high = mid; mp_exch(&bracket_mid, &bracket_high)
+        }
+        else if cmp2 == .MP_GT {
+            low = mid; mp_exch(&bracket_mid, &bracket_low)
+        }
+        else {
+            c^ = mid; return .MP_OKAY
+        }
     }
-    if mp_cmp(&bracket_high, a) == .MP_EQ { c^ = high } else { c^ = low }
+    if mp_cmp(&bracket_high, a) == .MP_EQ {
+        c^ = high
+    } else {
+        c^ = low
+    }
     return .MP_OKAY
 }
 
 // --------------- Pack / unpack ---------------
 mp_pack_count :: proc(a: ^mp_int, nails: uint, size: uint) -> uint {
     bits := uint(mp_count_bits(a))
-    total := size*8 - nails
+    total := size * 8 - nails
     return (bits / total) + (1 if bits % total != 0 else 0)
 }
 
@@ -1812,18 +1892,24 @@ mp_pack :: proc(rop: []u8, order: mp_order, size: uint, endian: mp_endian, nails
     t: mp_int; defer mp_clear(&t)
     mp_init_copy(&t, op) or_return
     if endian == .MP_NATIVE_ENDIAN {
-        // detect endianness
-        n: u16 = 1
-        if (cast(^u8)&n)^ == 1 { endian = .MP_LITTLE_ENDIAN } else { endian = .MP_BIG_ENDIAN }
+    // detect endianness
+        n : u16 = 1
+        if (cast(^u8)&n)^ == 1 {
+            endian = .MP_LITTLE_ENDIAN
+        } else {
+            endian = .MP_BIG_ENDIAN
+        }
     }
     odd_nails := nails % 8
-    odd_nail_mask: u8 = 0xff
-    for i in 0..<odd_nails { odd_nail_mask ~= (1 << (7 - i)) }
+    odd_nail_mask : u8 = 0xff
+    for i in 0 ..< odd_nails {
+        odd_nail_mask ~= (1 << (7 - i))
+    }
     nail_bytes := nails / 8
-    for i: uint = 0; i < count; i += 1 {
-        for j: uint = 0; j < size; j += 1 {
+    for i : uint = 0; i < count; i += 1 {
+        for j : uint = 0; j < size; j += 1 {
             idx := (i if order == .MP_LSB_FIRST else count - 1 - i) * size +
-                   (j if endian == .MP_LITTLE_ENDIAN else size - 1 - j)
+            (j if endian == .MP_LITTLE_ENDIAN else size - 1 - j)
             if j >= size - nail_bytes {
                 rop[idx] = 0
                 continue
@@ -1844,17 +1930,23 @@ mp_unpack :: proc(rop: ^mp_int, count: uint, order: mp_order, size: uint, endian
     endian := endian
     mp_zero(rop)
     if endian == .MP_NATIVE_ENDIAN {
-        n: u16 = 1
-        if (cast(^u8)&n)^ == 1 { endian = .MP_LITTLE_ENDIAN } else { endian = .MP_BIG_ENDIAN }
+        n : u16 = 1
+        if (cast(^u8)&n)^ == 1 {
+            endian = .MP_LITTLE_ENDIAN
+        } else {
+            endian = .MP_BIG_ENDIAN
+        }
     }
     odd_nails := nails % 8
-    odd_nail_mask: u8 = 0xff
-    for i in 0..<odd_nails { odd_nail_mask ~= (1 << (7 - i)) }
+    odd_nail_mask : u8 = 0xff
+    for i in 0 ..< odd_nails {
+        odd_nail_mask ~= (1 << (7 - i))
+    }
     nail_bytes := nails / 8
-    for i: uint = 0; i < count; i += 1 {
-        for j: uint = 0; j < size - nail_bytes; j += 1 {
+    for i : uint = 0; i < count; i += 1 {
+        for j : uint = 0; j < size - nail_bytes; j += 1 {
             idx := (i if order == .MP_MSB_FIRST else count - 1 - i) * size +
-                   (j + nail_bytes if endian == .MP_BIG_ENDIAN else size - 1 - j - nail_bytes)
+            (j + nail_bytes if endian == .MP_BIG_ENDIAN else size - 1 - j - nail_bytes)
             byte_val := op[idx]
             shift := 8 if j != 0 else int(8 - odd_nails)
             mp_mul_2d(rop, shift, rop) or_return
@@ -1870,21 +1962,23 @@ mp_unpack :: proc(rop: ^mp_int, count: uint, order: mp_order, size: uint, endian
 mp_error_to_string :: proc(code: mp_err) -> string {
     switch code {
     case .MP_OKAY: return "Successful"
-    case .MP_ERR:  return "Unknown error"
-    case .MP_MEM:  return "Out of heap"
-    case .MP_VAL:  return "Value out of range"
+    case .MP_ERR: return "Unknown error"
+    case .MP_MEM: return "Out of heap"
+    case .MP_VAL: return "Value out of range"
     case .MP_ITER: return "Max. iterations reached"
-    case .MP_BUF:  return "Buffer overflow"
-    case .MP_OVF:  return "Integer overflow"
+    case .MP_BUF: return "Buffer overflow"
+    case .MP_OVF: return "Integer overflow"
     }
     return "Invalid error code"
 }
 
 mp_get_double :: proc(a: ^mp_int) -> f64 {
-    d: f64 = 0.0
+    d : f64 = 0.0
     fac := 1.0
-    for _ in 0..<DIGIT_BIT { fac *= 2.0 }
-    for i := a.used-1; i >= 0; i -= 1 {
+    for _ in 0 ..< DIGIT_BIT {
+        fac *= 2.0
+    }
+    for i := a.used - 1; i >= 0; i -= 1 {
         d = d * fac + f64(a.dp[i])
     }
     return -d if a.sign == .MP_NEG else d
@@ -1893,15 +1987,21 @@ mp_get_double :: proc(a: ^mp_int) -> f64 {
 mp_set_double :: proc(a: ^mp_int, b: f64) -> mp_err {
     bits := transmute(u64) b
     exp := int((bits >> 52) & 0x7FF)
-    frac := (bits & ((1<<52)-1)) | (1<<52)
+    frac := (bits & ((1 << 52) - 1)) | (1 << 52)
     if exp == 0x7FF do return .MP_VAL
     exp -= 1023 + 52
     mp_set_u64(a, u64(frac))
     err: mp_err
-    if exp < 0 { err = mp_div_2d(a, -exp, a, nil) }
-    else { err = mp_mul_2d(a, exp, a) }
+    if exp < 0 {
+        err = mp_div_2d(a, -exp, a, nil)
+    }
+    else {
+        err = mp_mul_2d(a, exp, a)
+    }
     if err != .MP_OKAY do return err
-    if (bits>>63) != 0 && a.used != 0 { a.sign = .MP_NEG }
+    if (bits >> 63) != 0 && a.used != 0 {
+        a.sign = .MP_NEG
+    }
     return .MP_OKAY
 }
 
@@ -1910,10 +2010,10 @@ mp_get_i32 :: proc(a: ^mp_int) -> i32 {
     return -res if a.sign == .MP_NEG else res
 }
 mp_get_mag_u32 :: proc(a: ^mp_int) -> u32 {
-    lim := min(a.used, (size_of(u32)*8 + DIGIT_BIT - 1) / DIGIT_BIT)
+    lim := min(a.used, (size_of(u32) * 8 + DIGIT_BIT - 1) / DIGIT_BIT)
     res: u32
-    for i := lim-1; i >= 0; i -= 1 {
-        res <<= DIGIT_BIT if size_of(u32)*8 > DIGIT_BIT else 0
+    for i := lim - 1; i >= 0; i -= 1 {
+        res <<= DIGIT_BIT if size_of(u32) * 8 > DIGIT_BIT else 0
         res |= u32(a.dp[i])
     }
     return res
@@ -1924,7 +2024,9 @@ mp_set_u32 :: proc(a: ^mp_int, b: u32) {
     for val != 0 {
         a.dp[i] = mp_digit(val & MP_MASK)
         i += 1
-        if size_of(u32)*8 <= DIGIT_BIT { break }
+        if size_of(u32) * 8 <= DIGIT_BIT {
+            break
+        }
         val >>= DIGIT_BIT
     }
     a.used = i
@@ -1933,7 +2035,9 @@ mp_set_u32 :: proc(a: ^mp_int, b: u32) {
 }
 mp_set_i32 :: proc(a: ^mp_int, b: i32) {
     mp_set_u32(a, u32(abs(b)))
-    if b < 0 { a.sign = .MP_NEG }
+    if b < 0 {
+        a.sign = .MP_NEG
+    }
 }
 mp_init_i32 :: proc(a: ^mp_int, b: i32) -> mp_err {
     mp_init(a) or_return; mp_set_i32(a, b); return .MP_OKAY
@@ -1947,10 +2051,10 @@ mp_get_i64 :: proc(a: ^mp_int) -> i64 {
     return -res if a.sign == .MP_NEG else res
 }
 mp_get_mag_u64 :: proc(a: ^mp_int) -> u64 {
-    lim := min(a.used, (size_of(u64)*8 + DIGIT_BIT - 1) / DIGIT_BIT)
+    lim := min(a.used, (size_of(u64) * 8 + DIGIT_BIT - 1) / DIGIT_BIT)
     res: u64
-    for i := lim-1; i >= 0; i -= 1 {
-        res <<= DIGIT_BIT if size_of(u64)*8 > DIGIT_BIT else 0
+    for i := lim - 1; i >= 0; i -= 1 {
+        res <<= DIGIT_BIT if size_of(u64) * 8 > DIGIT_BIT else 0
         res |= u64(a.dp[i])
     }
     return res
@@ -1961,7 +2065,9 @@ mp_set_u64 :: proc(a: ^mp_int, b: u64) {
     for val != 0 {
         a.dp[i] = mp_digit(val & MP_MASK)
         i += 1
-        if size_of(u64)*8 <= DIGIT_BIT { break }
+        if size_of(u64) * 8 <= DIGIT_BIT {
+            break
+        }
         val >>= DIGIT_BIT
     }
     a.used = i
@@ -1970,7 +2076,9 @@ mp_set_u64 :: proc(a: ^mp_int, b: u64) {
 }
 mp_set_i64 :: proc(a: ^mp_int, b: i64) {
     mp_set_u64(a, u64(abs(b)))
-    if b < 0 { a.sign = .MP_NEG }
+    if b < 0 {
+        a.sign = .MP_NEG
+    }
 }
 mp_init_i64 :: proc(a: ^mp_int, b: i64) -> mp_err {
     mp_init(a) or_return; mp_set_i64(a, b); return .MP_OKAY
@@ -1980,7 +2088,7 @@ mp_init_u64 :: proc(a: ^mp_int, b: u64) -> mp_err {
 }
 
 mp_get_l :: proc(a: ^mp_int) -> int {
-    // approximation for "long" as int
+// approximation for "long" as int
     return int(mp_get_i64(a))
 }
 mp_set_l :: proc(a: ^mp_int, b: int) {
@@ -2034,20 +2142,48 @@ mp_clear_multi :: proc(mp: ..^mp_int) {
 // mp_fread and mp_fwrite are omitted; use Odin's string / buffer conversion instead.
 
 // --------------- Additional stubs for missing functions ---------------
-mp_kronecker :: proc(a: ^mp_int, p: ^mp_int, c: ^int) -> mp_err { return .MP_ERR } // not implemented
-mp_exteuclid :: proc(a: ^mp_int, b: ^mp_int, U1, U2, U3: ^mp_int) -> mp_err { return .MP_ERR }
-mp_montgomery_setup :: proc(n: ^mp_int, rho: ^mp_digit) -> mp_err { return .MP_ERR }
-mp_montgomery_calc_normalization :: proc(a: ^mp_int, b: ^mp_int) -> mp_err { return .MP_ERR }
-mp_montgomery_reduce :: proc(x: ^mp_int, n: ^mp_int, rho: mp_digit) -> mp_err { return .MP_ERR }
-mp_reduce_is_2k :: proc(a: ^mp_int) -> bool { return false }
-mp_reduce_2k_setup :: proc(a: ^mp_int, d: ^mp_digit) -> mp_err { return .MP_ERR }
-mp_reduce_2k :: proc(a: ^mp_int, n: ^mp_int, d: mp_digit) -> mp_err { return .MP_ERR }
-mp_reduce_is_2k_l :: proc(a: ^mp_int) -> bool { return false }
-mp_reduce_2k_setup_l :: proc(a: ^mp_int, d: ^mp_int) -> mp_err { return .MP_ERR }
-mp_reduce_2k_l :: proc(a: ^mp_int, n: ^mp_int, d: ^mp_int) -> mp_err { return .MP_ERR }
-mp_exptmod :: proc(G, X, P, Y: ^mp_int) -> mp_err { return .MP_ERR }
-mp_reduce_setup :: proc(a: ^mp_int, b: ^mp_int) -> mp_err { return .MP_ERR }
-mp_reduce :: proc(x: ^mp_int, m: ^mp_int, mu: ^mp_int) -> mp_err { return .MP_ERR }
+mp_kronecker :: proc(a: ^mp_int, p: ^mp_int, c: ^int) -> mp_err {
+    return .MP_ERR
+} // not implemented
+mp_exteuclid :: proc(a: ^mp_int, b: ^mp_int, U1, U2, U3: ^mp_int) -> mp_err {
+    return .MP_ERR
+}
+mp_montgomery_setup :: proc(n: ^mp_int, rho: ^mp_digit) -> mp_err {
+    return .MP_ERR
+}
+mp_montgomery_calc_normalization :: proc(a: ^mp_int, b: ^mp_int) -> mp_err {
+    return .MP_ERR
+}
+mp_montgomery_reduce :: proc(x: ^mp_int, n: ^mp_int, rho: mp_digit) -> mp_err {
+    return .MP_ERR
+}
+mp_reduce_is_2k :: proc(a: ^mp_int) -> bool {
+    return false
+}
+mp_reduce_2k_setup :: proc(a: ^mp_int, d: ^mp_digit) -> mp_err {
+    return .MP_ERR
+}
+mp_reduce_2k :: proc(a: ^mp_int, n: ^mp_int, d: mp_digit) -> mp_err {
+    return .MP_ERR
+}
+mp_reduce_is_2k_l :: proc(a: ^mp_int) -> bool {
+    return false
+}
+mp_reduce_2k_setup_l :: proc(a: ^mp_int, d: ^mp_int) -> mp_err {
+    return .MP_ERR
+}
+mp_reduce_2k_l :: proc(a: ^mp_int, n: ^mp_int, d: ^mp_int) -> mp_err {
+    return .MP_ERR
+}
+mp_exptmod :: proc(G, X, P, Y: ^mp_int) -> mp_err {
+    return .MP_ERR
+}
+mp_reduce_setup :: proc(a: ^mp_int, b: ^mp_int) -> mp_err {
+    return .MP_ERR
+}
+mp_reduce :: proc(x: ^mp_int, m: ^mp_int, mu: ^mp_int) -> mp_err {
+    return .MP_ERR
+}
 
 // --------------- s_mp_get_bit ---------------
 s_mp_get_bit :: proc(a: ^mp_int, b: int) -> bool {
