@@ -3,10 +3,6 @@ package godin
 
 import "core:mem"
 
-// import "core:fmt" // not needed
-
-
-
 // ---------------------------------------------------------------------------
 // Constants (utf8proc options flags as bit set)
 // ---------------------------------------------------------------------------
@@ -41,11 +37,11 @@ utf8proc_category_t :: enum i16 {
 }
 
 utf8proc_bidi_class_t :: enum i16 {
-    L   = 1, LRE, LRO, R, AL,
-    RLE = 6, RLO, PDF, EN, ES,
-    ET  = 11, AN, CS, NSM, BN,
-    B   = 16, S, WS, ON, LRI,
-    RLI = 21, FSI, PDI,
+    _L   = 1, _LRE, _LRO, _R, _AL,
+    _RLE = 6, _RLO, _PDF, _EN, _ES,
+    _ET  = 11, _AN, _CS, _NSM, _BN,
+    _B   = 16, _S, _WS, _ON, _LRI,
+    _RLI = 21, _FSI, _PDI,
 }
 
 utf8proc_decomp_type_t :: enum i16 {
@@ -92,30 +88,18 @@ utf8proc_boundclass_t :: enum i16 {
 // ---------------------------------------------------------------------------
 // Basic type aliases matching utf8proc types
 // ---------------------------------------------------------------------------
-utf8proc_int8_t :: i8
-utf8proc_uint8_t :: u8
-utf8proc_int16_t :: i16
-utf8proc_uint16_t :: u16
-utf8proc_int32_t :: i32
-utf8proc_uint32_t :: u32
-utf8proc_size_t :: uint
-utf8proc_ssize_t :: int
-utf8proc_bool :: bool
-
-utf8proc_propval_t :: i16
-utf8proc_uint16_t :: u16
 
 utf8proc_property_t :: struct #packed {
-    category: utf8proc_propval_t,
-    combining_class: utf8proc_propval_t,
-    bidi_class: utf8proc_propval_t,
-    decomp_type: utf8proc_propval_t,
-    decomp_seqindex: utf8proc_uint16_t,
-    casefold_seqindex: utf8proc_uint16_t,
-    uppercase_seqindex: utf8proc_uint16_t,
-    lowercase_seqindex: utf8proc_uint16_t,
-    titlecase_seqindex: utf8proc_uint16_t,
-    comb_index: utf8proc_uint16_t,
+    category: i16,
+    combining_class: i16,
+    bidi_class: i16,
+    decomp_type: i16,
+    decomp_seqindex: u16,
+    casefold_seqindex: u16,
+    uppercase_seqindex: u16,
+    lowercase_seqindex: u16,
+    titlecase_seqindex: u16,
+    comb_index: u16,
 
     // bit-fields (u16 内打包)
     bidi_mirrored: bool `bit_field:"0:1"`,
@@ -127,34 +111,24 @@ utf8proc_property_t :: struct #packed {
     boundclass: u8 `bit_field:"8:8"`,
 }
 
-// ---------------------------------------------------------------------------
-// Forward declarations: arrays and property struct are defined elsewhere
-// in the package (utf8proc_data.i.c / ucg_tables.i.h translated to Odin).
-// ---------------------------------------------------------------------------
-foreign import utf8proc_data " " // not actually used, they are in the same package
-@(private) foreign {
-// utf8proc properties table, as defined in the companion file
-    utf8proc_properties  : [0]utf8proc_property_t  // placeholder, actual array exists
-    utf8proc_stage1table : [0]u16
-    utf8proc_stage2table : [0]u16
-    utf8proc_sequences   : [0]u16
-    utf8proc_combinations: [0]u16
-}
-@(private)
-utf8proc_utf8class : [256]i8 = { ... } // will be defined in data file; we reference it
-
-// ucg ranges – defined in another file, we just use them.
-@(private) foreign {
-    ucg_spacing_mark_ranges                         : [0]i32
-    ucg_nonspacing_mark_ranges                      : [0]i32
-    ucg_emoji_extended_pictographic_ranges          : [0]i32
-    ucg_grapheme_extend_ranges                      : [0]i32
-    ucg_hangul_syllable_lv_singlets                 : [0]i32
-    ucg_hangul_syllable_lvt_ranges                  : [0]i32
-    ucg_indic_conjunct_break_consonant_ranges       : [0]i32
-    ucg_indic_conjunct_break_extend_ranges          : [0]i32
-    ucg_normalized_east_asian_width_ranges          : [0]i32
-}
+utf8proc_utf8class::[256] i8 {
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+    4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0
+};
 
 // ---------------------------------------------------------------------------
 // utf8proc functions
@@ -163,7 +137,7 @@ utf8proc_version :: proc() -> string {
     return "2.1.0"
 }
 
-utf8proc_errmsg :: proc(errcode: utf8proc_ssize_t) -> string {
+utf8proc_errmsg :: proc(errcode: int) -> string {
     switch errcode {
     case -1: return "Memory for processing UTF-8 data could not be allocated."
     case -2: return "UTF-8 string is too long to be processed."
@@ -175,7 +149,7 @@ utf8proc_errmsg :: proc(errcode: utf8proc_ssize_t) -> string {
 }
 
 
-utf8proc_iterate :: proc(str: []u8, strlen: utf8proc_ssize_t, dst: ^utf8proc_int32_t) -> utf8proc_ssize_t {
+utf8proc_iterate :: proc(str: []u8, strlen: int, dst: ^i32) -> int {
     uc: u32
     end_ptr: ^u8
     p := &str[0]
@@ -235,11 +209,11 @@ utf8proc_iterate :: proc(str: []u8, strlen: utf8proc_ssize_t, dst: ^utf8proc_int
     return 4
 }
 
-utf8proc_codepoint_valid :: proc(uc: utf8proc_int32_t) -> bool {
+utf8proc_codepoint_valid :: proc(uc: i32) -> bool {
     return (u32(uc) - 0xd800 > 0x07ff) && (u32(uc) < 0x110000)
 }
 
-utf8proc_encode_char :: proc(uc: utf8proc_int32_t, dst: []u8) -> utf8proc_ssize_t {
+utf8proc_encode_char :: proc(uc: i32, dst: []u8) -> int {
     switch {
     case uc < 0:
         return 0
@@ -266,7 +240,7 @@ utf8proc_encode_char :: proc(uc: utf8proc_int32_t, dst: []u8) -> utf8proc_ssize_
 }
 
 @(private)
-unsafe_encode_char :: proc(uc: utf8proc_int32_t, dst: []u8) -> utf8proc_ssize_t {
+unsafe_encode_char :: proc(uc: i32, dst: []u8) -> int {
     switch {
     case uc < 0:
         return 0
@@ -299,14 +273,14 @@ unsafe_encode_char :: proc(uc: utf8proc_int32_t, dst: []u8) -> utf8proc_ssize_t 
 }
 
 @(private)
-unsafe_get_property :: proc(uc: utf8proc_int32_t) -> ^utf8proc_property_t {
+unsafe_get_property :: proc(uc: i32) -> ^utf8proc_property_t {
 // These tables are indexed the same way as in the original C code.
     stage1 := &utf8proc_stage1table[uc >> 8]
     idx := utf8proc_stage2table[stage1^ + u16(uc & 0xFF)]
     return &utf8proc_properties[idx]
 }
 
-utf8proc_get_property :: proc(uc: utf8proc_int32_t) -> ^utf8proc_property_t {
+utf8proc_get_property :: proc(uc: i32) -> ^utf8proc_property_t {
     if uc < 0 || uc >= 0x110000 {
         return &utf8proc_properties[0] // default property
     }
@@ -350,7 +324,7 @@ grapheme_break_simple :: proc(lbc, tbc: i32) -> bool {
 }
 
 @(private)
-grapheme_break_extended :: proc(lbc, tbc: i32, state: ^utf8proc_int32_t) -> bool {
+grapheme_break_extended :: proc(lbc, tbc: i32, state: ^i32) -> bool {
     lbc_override := lbc
     if state != nil && state^ != i32(utf8proc_boundclass_t.START) {
         lbc_override = state^
@@ -369,7 +343,7 @@ grapheme_break_extended :: proc(lbc, tbc: i32, state: ^utf8proc_int32_t) -> bool
     return break_permitted
 }
 
-utf8proc_grapheme_break_stateful :: proc(c1, c2: utf8proc_int32_t, state: ^utf8proc_int32_t) -> bool {
+utf8proc_grapheme_break_stateful :: proc(c1, c2: i32, state: ^i32) -> bool {
     return grapheme_break_extended(
     i32(utf8proc_get_property(c1).boundclass),
     i32(utf8proc_get_property(c2).boundclass),
@@ -377,12 +351,12 @@ utf8proc_grapheme_break_stateful :: proc(c1, c2: utf8proc_int32_t, state: ^utf8p
     )
 }
 
-utf8proc_grapheme_break :: proc(c1, c2: utf8proc_int32_t) -> bool {
+utf8proc_grapheme_break :: proc(c1, c2: i32) -> bool {
     return utf8proc_grapheme_break_stateful(c1, c2, nil)
 }
 
 @(private)
-seqindex_decode_entry :: proc(entry: ^u16) -> (next_entry: ^u16, codepoint: utf8proc_int32_t) {
+seqindex_decode_entry :: proc(entry: ^u16) -> (next_entry: ^u16, codepoint: i32) {
     entry_cp := i32(entry^)
     next_entry = entry[1:]  // 默认前进一步
     if (entry_cp & 0xF800) == 0xD800 {
@@ -397,7 +371,7 @@ seqindex_decode_entry :: proc(entry: ^u16) -> (next_entry: ^u16, codepoint: utf8
 }
 
 @(private)
-seqindex_decode_index :: proc(seqindex: u32) -> (codepoint: utf8proc_int32_t) {
+seqindex_decode_index :: proc(seqindex: u32) -> (codepoint: i32) {
     entry := &utf8proc_sequences[seqindex]
     entry, codepoint = seqindex_decode_entry(entry)
     return
@@ -406,11 +380,11 @@ seqindex_decode_index :: proc(seqindex: u32) -> (codepoint: utf8proc_int32_t) {
 @(private)
 seqindex_write_char_decomposed :: proc(
 seqindex: u16,
-dst: []utf8proc_int32_t,
-bufsize: utf8proc_ssize_t,
+dst: []i32,
+bufsize: int,
 options: utf8proc_option_t,
 last_boundclass: ^int,
-) -> utf8proc_ssize_t {
+) -> int {
     written := 0
     entry := &utf8proc_sequences[seqindex & 0x1FFF]
     len_ := int(seqindex >> 13)
@@ -418,7 +392,7 @@ last_boundclass: ^int,
         len_ = int(entry^)
         entry = entry[1]
     }
-    entry_cp :utf8proc_int32_t
+    entry_cp :i32
     for idx := 0; idx <= len_; idx += 1 {
         entry, entry_cp = seqindex_decode_entry(entry)
         n := utf8proc_decompose_char(entry_cp, dst[written:], max(0, bufsize - written), options, last_boundclass)
@@ -430,34 +404,34 @@ last_boundclass: ^int,
     return written
 }
 
-utf8proc_tolower :: proc(c: utf8proc_int32_t) -> utf8proc_int32_t {
+utf8proc_tolower :: proc(c: i32) -> i32 {
     cl := utf8proc_get_property(c).lowercase_seqindex
     if cl != 0xffff {
         return seqindex_decode_index(u32(cl))
     }
     return c
 }
-utf8proc_toupper :: proc(c: utf8proc_int32_t) -> utf8proc_int32_t {
+utf8proc_toupper :: proc(c: i32) -> i32 {
     cu := utf8proc_get_property(c).uppercase_seqindex
     if cu != 0xffff {
         return seqindex_decode_index(u32(cu))
     }
     return c
 }
-utf8proc_totitle :: proc(c: utf8proc_int32_t) -> utf8proc_int32_t {
+utf8proc_totitle :: proc(c: i32) -> i32 {
     cu := utf8proc_get_property(c).titlecase_seqindex
     if cu != 0xffff {
         return seqindex_decode_index(u32(cu))
     }
     return c
 }
-utf8proc_charwidth :: proc(c: utf8proc_int32_t) -> int {
+utf8proc_charwidth :: proc(c: i32) -> int {
     return int(utf8proc_get_property(c).charwidth)
 }
-utf8proc_category :: proc(c: utf8proc_int32_t) -> utf8proc_category_t {
+utf8proc_category :: proc(c: i32) -> utf8proc_category_t {
     return utf8proc_category_t(utf8proc_get_property(c).category)
 }
-utf8proc_category_string :: proc(c: utf8proc_int32_t) -> string {
+utf8proc_category_string :: proc(c: i32) -> string {
     s := [30]string{
         "Cn", "Lu", "Ll", "Lt", "Lm", "Lo", "Mn", "Mc", "Me", "Nd", "Nl", "No",
         "Pc", "Pd", "Ps", "Pe", "Pi", "Pf", "Po", "Sm", "Sc", "Sk", "So", "Zs", "Zl", "Zp",
@@ -467,12 +441,12 @@ utf8proc_category_string :: proc(c: utf8proc_int32_t) -> string {
 }
 
 utf8proc_decompose_char :: proc(
-uc: utf8proc_int32_t,
-dst: []utf8proc_int32_t,
-bufsize: utf8proc_ssize_t,
+uc: i32,
+dst: []i32,
+bufsize: int,
 options: utf8proc_option_t,
 last_boundclass: ^int,
-) -> utf8proc_ssize_t {
+) -> int {
     if uc < 0 || uc >= 0x110000 {
         return -4
     }
@@ -596,20 +570,20 @@ last_boundclass: ^int,
 }
 
 utf8proc_decompose :: proc(
-str: []u8, strlen: utf8proc_ssize_t,
-buffer: []utf8proc_int32_t, bufsize: utf8proc_ssize_t,
+str: []u8, strlen: int,
+buffer: []i32, bufsize: int,
 options: utf8proc_option_t,
-) -> utf8proc_ssize_t {
+) -> int {
     return utf8proc_decompose_custom(str, strlen, buffer, bufsize, options, nil, nil)
 }
 
 utf8proc_decompose_custom :: proc(
-str: []u8, strlen: utf8proc_ssize_t,
-buffer: []utf8proc_int32_t, bufsize: utf8proc_ssize_t,
+str: []u8, strlen: int,
+buffer: []i32, bufsize: int,
 options: utf8proc_option_t,
-custom_func: proc(utf8proc_int32_t, rawptr) -> utf8proc_int32_t,
+custom_func: proc(i32, rawptr) -> i32,
 custom_data: rawptr,
-) -> utf8proc_ssize_t {
+) -> int {
     wpos := 0
     if (.COMPOSE in options) && (.DECOMPOSE in options) {
         return -5
@@ -621,7 +595,7 @@ custom_data: rawptr,
     boundclass := i32(utf8proc_boundclass_t.START)
     rpos := 0
     for {
-        uc: utf8proc_int32_t
+        uc: i32
         if .NULLTERM in options {
             n := utf8proc_iterate(str[rpos:], -1, &uc)
             if uc < 0 {
@@ -652,7 +626,7 @@ custom_data: rawptr,
             return decomp_result
         }
         wpos += decomp_result
-        if wpos < 0 || wpos > (max(int) / 2 / size_of(utf8proc_int32_t)) {
+        if wpos < 0 || wpos > (max(int) / 2 / size_of(i32)) {
             return -2
         }
     }
@@ -679,7 +653,7 @@ custom_data: rawptr,
     return wpos
 }
 
-utf8proc_normalize_utf32 :: proc(buffer: []utf8proc_int32_t, length: utf8proc_ssize_t, options: utf8proc_option_t) -> utf8proc_ssize_t {
+utf8proc_normalize_utf32 :: proc(buffer: []i32, length: int, options: utf8proc_option_t) -> int {
     wpos := 0
     rpos := 0
     buf := buffer
@@ -722,7 +696,7 @@ utf8proc_normalize_utf32 :: proc(buffer: []utf8proc_int32_t, length: utf8proc_ss
 
     // compose
     if .COMPOSE in options {
-        starter: ^utf8proc_int32_t
+        starter: ^i32
         starter_property: ^utf8proc_property_t
         max_combining_class : i32 = -1
         wpos = 0
@@ -760,11 +734,11 @@ utf8proc_normalize_utf32 :: proc(buffer: []utf8proc_int32_t, length: utf8proc_ss
                     idx := (int(current_property.comb_index) & 0x3FFF) - int(utf8proc_combinations[sidx])
                     if idx >= 0 && idx <= int(utf8proc_combinations[sidx + 1]) {
                         idx += sidx + 2
-                        composition: utf8proc_int32_t
+                        composition: i32
                         if (current_property.comb_index & 0x4000) != 0 {
-                            composition = utf8proc_int32_t(utf8proc_combinations[idx]) << 16 | utf8proc_int32_t(utf8proc_combinations[idx + 1])
+                            composition = i32(utf8proc_combinations[idx]) << 16 | i32(utf8proc_combinations[idx + 1])
                         } else {
-                            composition = utf8proc_int32_t(utf8proc_combinations[idx])
+                            composition = i32(utf8proc_combinations[idx])
                         }
                         if composition > 0 &&
                         (!(.STABLE in options) || !unsafe_get_property(composition).comp_exclusion) {
@@ -792,7 +766,7 @@ utf8proc_normalize_utf32 :: proc(buffer: []utf8proc_int32_t, length: utf8proc_ss
     return length
 }
 
-utf8proc_reencode :: proc(buffer: []utf8proc_int32_t, length: utf8proc_ssize_t, options: utf8proc_option_t) -> utf8proc_ssize_t {
+utf8proc_reencode :: proc(buffer: []i32, length: int, options: utf8proc_option_t) -> int {
     len := utf8proc_normalize_utf32(buffer, length, options)
     if len < 0 {
         return len
@@ -814,24 +788,24 @@ utf8proc_reencode :: proc(buffer: []utf8proc_int32_t, length: utf8proc_ssize_t, 
     return wpos
 }
 
-utf8proc_map :: proc(str: []u8, strlen: utf8proc_ssize_t, options: utf8proc_option_t) -> (data: [dynamic]u8, err: utf8proc_ssize_t) {
+utf8proc_map :: proc(str: []u8, strlen: int, options: utf8proc_option_t) -> (data: [dynamic]u8, err: int) {
     return utf8proc_map_custom(str, strlen, options, nil, nil)
 }
 
 utf8proc_map_custom :: proc(
-str: []u8, strlen: utf8proc_ssize_t,
+str: []u8, strlen: int,
 options: utf8proc_option_t,
-custom_func: proc(utf8proc_int32_t, rawptr) -> utf8proc_int32_t,
+custom_func: proc(i32, rawptr) -> i32,
 custom_data: rawptr,
-) -> (data: [dynamic]u8, err: utf8proc_ssize_t) {
+) -> (data: [dynamic]u8, err: int) {
     result := utf8proc_decompose_custom(str, strlen, nil, 0, options, custom_func, custom_data)
     if result < 0 {
         err = result
         return
     }
     // Allocate dynamic array for codepoints (as i32) and later reencode to bytes
-    buf_dyn := make([dynamic]u8, result * size_of(utf8proc_int32_t) + 1, allocator = context.allocator)
-    codepoints := mem.slice_ptr((^utf8proc_int32_t)(&buf_dyn[0]), result)
+    buf_dyn := make([dynamic]u8, result * size_of(i32) + 1, allocator = context.allocator)
+    codepoints := mem.slice_ptr((^i32)(&buf_dyn[0]), result)
     result = utf8proc_decompose_custom(str, strlen, codepoints, result, options, custom_func, custom_data)
     if result < 0 {
         delete(buf_dyn)
@@ -875,7 +849,7 @@ rune_is_letter :: proc(r: rune) -> bool {
         }
         return (u32(r) | 0x20) - 0x61 < 26
     }
-    switch utf8proc_category(utf8proc_int32_t(r)) {
+    switch utf8proc_category(i32(r)) {
     case .LU, .LL, .LT, .LM, .LO: return true
     case: return false
     }
@@ -884,7 +858,7 @@ rune_is_digit :: proc(r: rune) -> bool {
     if r < 0x80 {
         return u32(r) - '0' < 10
     }
-    return utf8proc_category(utf8proc_int32_t(r)) == .ND
+    return utf8proc_category(i32(r)) == .ND
 }
 rune_is_letter_or_digit :: proc(r: rune) -> bool {
     if r < 0x80 {
@@ -896,7 +870,7 @@ rune_is_letter_or_digit :: proc(r: rune) -> bool {
         }
         return u32(r) - '0' < 10
     }
-    switch utf8proc_category(utf8proc_int32_t(r)) {
+    switch utf8proc_category(i32(r)) {
     case .LU, .LL, .LT, .LM, .LO: return true
     case .ND: return true
     }
