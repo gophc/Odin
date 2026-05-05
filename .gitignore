@@ -325,3 +325,11 @@ sandbox/
 godin/godin.7z
 src/cipp/cipp.7z
 odingo/odingo.7z
+.graphify_detect.json
+.graphify_python
+.graphify_semantic.json
+.graphify_extract.json
+.graphify_ast.json
+.graphify_analysis.json
+/graphify-out
+/src/graphify-out
