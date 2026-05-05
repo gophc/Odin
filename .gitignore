@@ -322,3 +322,5 @@ sandbox/
 *.i.c
 *.i.h
 /odingo/vendor
+godin/godin.7z
+src/cipp/cipp.7z
