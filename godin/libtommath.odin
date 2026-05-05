@@ -229,6 +229,9 @@ mp_cmp_mag :: proc(a: ^mp_int, b: ^mp_int) -> mp_ord {
 }
 
 mp_cmp_d :: proc(a: ^mp_int, b: mp_digit) -> mp_ord {
+    if a.used == 0 {
+        if b == 0 { return .MP_EQ } else { return .MP_LT }
+    }
     if a.sign == .MP_NEG do return .MP_LT
     if a.used > 1 do return .MP_GT
     if a.dp[0] != b {
@@ -260,7 +263,7 @@ s_mp_add :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int) -> mp_err {
         u = v >> DIGIT_BIT
     }
     c.dp[i] = u
-    s_mp_zero_digs(c.dp[c.used:oldused])
+    if c.used < oldused do s_mp_zero_digs(c.dp[c.used:oldused])
     mp_clamp(c)
     return .MP_OKAY
 }
@@ -283,7 +286,7 @@ s_mp_sub :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int) -> mp_err {
         c.dp[i] = v & MP_MASK
         u = (v >> (size_of(mp_digit)*8-1)) & 1
     }
-    s_mp_zero_digs(c.dp[c.used:oldused])
+    if c.used < oldused do s_mp_zero_digs(c.dp[c.used:oldused])
     mp_clamp(c)
     return .MP_OKAY
 }
@@ -356,7 +359,7 @@ mp_add_d :: proc(a: ^mp_int, b: mp_digit, c: ^mp_int) -> mp_err {
         c.dp[0] = b - a.dp[0] // a.used is 1 and a.dp[0] < b
     }
     c.sign = .MP_ZPOS
-    s_mp_zero_digs(c.dp[c.used:oldused])
+    if c.used < oldused do s_mp_zero_digs(c.dp[c.used:oldused])
     mp_clamp(c)
     return .MP_OKAY
 }
@@ -405,7 +408,7 @@ mp_sub_d :: proc(a: ^mp_int, b: mp_digit, c: ^mp_int) -> mp_err {
             mu = (v >> (size_of(mp_digit)*8-1)) & 1
         }
     }
-    s_mp_zero_digs(c.dp[c.used:oldused])
+    if c.used < oldused do s_mp_zero_digs(c.dp[c.used:oldused])
     mp_clamp(c)
     return .MP_OKAY
 }
@@ -430,7 +433,7 @@ mp_mul_d :: proc(a: ^mp_int, b: mp_digit, c: ^mp_int) -> mp_err {
     }
     c.dp[i] = u
     c.used = a.used + 1
-    s_mp_zero_digs(c.dp[c.used:oldused])
+    if c.used < oldused do s_mp_zero_digs(c.dp[c.used:oldused])
     mp_clamp(c)
     return .MP_OKAY
 }
@@ -449,7 +452,7 @@ mp_mul_2 :: proc(a: ^mp_int, b: ^mp_int) -> mp_err {
         b.dp[b.used] = r
         b.used += 1
     }
-    s_mp_zero_digs(b.dp[b.used:oldused])
+    if b.used < oldused do s_mp_zero_digs(b.dp[b.used:oldused])
     b.sign = a.sign
     return .MP_OKAY
 }
@@ -464,7 +467,7 @@ mp_div_2 :: proc(a: ^mp_int, b: ^mp_int) -> mp_err {
         b.dp[i] = (a.dp[i] >> 1) | (r << (DIGIT_BIT - 1))
         r = rr
     }
-    s_mp_zero_digs(b.dp[b.used:oldused])
+    if b.used < oldused do s_mp_zero_digs(b.dp[b.used:oldused])
     b.sign = a.sign
     mp_clamp(b)
     return .MP_OKAY
@@ -669,7 +672,7 @@ s_mp_mul_comba :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int, digs: int) -> mp_err 
     oldused := c.used
     c.used = pa
     copy(c.dp[:pa], W)
-    s_mp_zero_digs(c.dp[c.used:oldused])
+    if c.used < oldused do s_mp_zero_digs(c.dp[c.used:oldused])
     mp_clamp(c)
     return .MP_OKAY
 }
@@ -870,8 +873,8 @@ s_mp_sqr_comba :: proc(a: ^mp_int, b: ^mp_int) -> mp_err {
     }
     oldused := b.used
     b.used = pa
-    copy(b.dp[:pa], W)
-    s_mp_zero_digs(b.dp[b.used:oldused])
+    if pa <= len(b.dp) do copy(b.dp[:pa], W)
+    if b.used < oldused do s_mp_zero_digs(b.dp[b.used:oldused])
     mp_clamp(b)
     return .MP_OKAY
 }

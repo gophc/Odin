@@ -214,7 +214,7 @@ test_add_d_sub_d :: proc(t: ^testing.T) {
     a.sign = .MP_NEG
     err = mp_add_d(&a, 55, &c); if !expect_ok(t, err, "-100+55")  do return
     // 预期：绝对值 45，符号负
-    testing.expectf(t, mp_cmp_d(&c, 45) == .MP_EQ && c.sign == .MP_NEG,
+    testing.expectf(t, mp_get_i64(&c) == -45 && c.sign == .MP_NEG,
                      "-100+55: expected -45, got sign=%v value=%s", c.sign, mp_to_string(&c))
 
     // 正数减单数字：100 - 30 = 70
@@ -225,7 +225,7 @@ test_add_d_sub_d :: proc(t: ^testing.T) {
     // 负数减单数字：-100 - 30 = -130
     a.sign = .MP_NEG
     err = mp_sub_d(&a, 30, &c); if !expect_ok(t, err, "-100-30")  do return
-    testing.expectf(t, mp_cmp_d(&c, 130) == .MP_EQ && c.sign == .MP_NEG,
+    testing.expectf(t, mp_get_i64(&c) == -130 && c.sign == .MP_NEG,
                      "-100-30: expected -130, got %v", mp_to_string(&c))
 }
 
@@ -481,7 +481,7 @@ test_complement_signed_rsh :: proc(t: ^testing.T) {
     // 有符号右移 -1 仍为 -1
     mp_set(&a, 1); a.sign = .MP_NEG
     err = mp_signed_rsh(&a, 5, &c); if !expect_ok(t, err, "signed rsh -1")  do return
-    testing.expectf(t, mp_cmp_d(&c, 1) == .MP_EQ && c.sign == .MP_NEG,
+    testing.expectf(t, mp_get_i64(&c) == -1,
                      "-1>>5: expected -1, got %v", mp_to_string(&c))
 }
 
