@@ -111,7 +111,7 @@ utf8proc_property_t :: struct #packed {
     boundclass: u8 `bit_field:"8:8"`,
 }
 
-utf8proc_utf8class::[256] i8 {
+utf8proc_utf8class :: [256] i8 {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,

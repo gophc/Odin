@@ -145,7 +145,7 @@ test_utf8proc_category :: proc(t: ^testing.T) {
 // ---------------------------------------------------------------------------
 @test
 test_utf8proc_decompose_char_NFD :: proc(t: ^testing.T) {
-    // é (U+00E9) decomposes to e + combining acute accent
+// é (U+00E9) decomposes to e + combining acute accent
     buf: [8]i32
     last_bc : int = 0
     n := utf8proc_decompose_char(0xE9, buf[:], len(buf), { .DECOMPOSE }, &last_bc)
@@ -156,7 +156,7 @@ test_utf8proc_decompose_char_NFD :: proc(t: ^testing.T) {
 
 @test
 test_utf8proc_decompose_char_hangul :: proc(t: ^testing.T) {
-    // Hangul syllable '한' (U+D55C)
+// Hangul syllable '한' (U+D55C)
     buf: [8]i32
     last_bc : int = 0
     n := utf8proc_decompose_char(0xD55C, buf[:], len(buf), { .DECOMPOSE }, &last_bc)
@@ -171,7 +171,7 @@ test_utf8proc_decompose_char_hangul :: proc(t: ^testing.T) {
 // ---------------------------------------------------------------------------
 @test
 test_grapheme_break_latin :: proc(t: ^testing.T) {
-    // 'a' + 'b' should break
+// 'a' + 'b' should break
     testing.expect(t, utf8proc_grapheme_break('a', 'b'))
     // 'a' + combining accent should not break
     testing.expect(t, !utf8proc_grapheme_break('a', 0x301))
@@ -179,7 +179,7 @@ test_grapheme_break_latin :: proc(t: ^testing.T) {
 
 @test
 test_grapheme_break_hangul :: proc(t: ^testing.T) {
-    // L + V should not break
+// L + V should not break
     testing.expect(t, !utf8proc_grapheme_break(0x1100, 0x1161)) // ᄀ + ᅡ
     // V + T should not break
     testing.expect(t, !utf8proc_grapheme_break(0x1161, 0x11A8)) // ᅡ + ᆨ
@@ -192,7 +192,7 @@ test_grapheme_break_hangul :: proc(t: ^testing.T) {
 // ---------------------------------------------------------------------------
 @test
 test_ucg_decode_grapheme_simple :: proc(t: ^testing.T) {
-    // simple "abc"
+// simple "abc"
     str := transmute([]u8)string("abc")
     graphemes, rune_count, grapheme_count, width, err := ucg_decode_grapheme_clusters(str, len(str))
     testing.expect(t, err == 0)
@@ -204,8 +204,8 @@ test_ucg_decode_grapheme_simple :: proc(t: ^testing.T) {
 
 @test
 test_ucg_decode_grapheme_emoji :: proc(t: ^testing.T) {
-    // "👨‍👩‍👧" (family: man ZWJ woman ZWJ girl)
-    // U+1F468 + ZWJ + U+1F469 + ZWJ + U+1F467
+// "👨‍👩‍👧" (family: man ZWJ woman ZWJ girl)
+// U+1F468 + ZWJ + U+1F469 + ZWJ + U+1F467
     str : []u8 = { 0xF0, 0x9F, 0x91, 0xA8, 0xE2, 0x80, 0x8D, 0xF0, 0x9F, 0x91, 0xA9, 0xE2, 0x80, 0x8D, 0xF0, 0x9F, 0x91, 0xA7 }
     graphemes, rune_count, grapheme_count, width, err := ucg_decode_grapheme_clusters(str, len(str))
     testing.expect(t, err == 0)
@@ -215,7 +215,7 @@ test_ucg_decode_grapheme_emoji :: proc(t: ^testing.T) {
 
 @test
 test_ucg_decode_grapheme_regional :: proc(t: ^testing.T) {
-    // "🇺🇸" (flag: US) – two regional indicators for one grapheme cluster
+// "🇺🇸" (flag: US) – two regional indicators for one grapheme cluster
     str : []u8 = { 0xF0, 0x9F, 0x87, 0xBA, 0xF0, 0x9F, 0x87, 0xB8 }
     graphemes, rune_count, grapheme_count, width, err := ucg_decode_grapheme_clusters(str, len(str))
     testing.expect(t, err == 0)
