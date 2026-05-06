@@ -145,17 +145,14 @@ memswap :: proc(i, j: rawptr, size: isize) {
                 a[k], b[k] = b[k], a[k]
             }
         } else {
-        // Swap larger chunks using a temporary buffer
-            buffer := make([]u8, 256, context.allocator)
-            defer delete(buffer)
-            off: isize
-            for off < size {
-                chunk := min(isize(len(buffer)), size - off)
+            buf := make([]u8, 256, context.temp_allocator)
+            for off : isize = 0; off < size; {
+                chunk := min(isize(len(buf)), size - off)
                 src := pointer_add(i, off)
                 dst := pointer_add(j, off)
-                mem.copy(raw_data(buffer), src, int(chunk))
+                mem.copy(raw_data(buf), src, int(chunk))
                 mem.copy(src, dst, int(chunk))
-                mem.copy(dst, raw_data(buffer), int(chunk))
+                mem.copy(dst, raw_data(buf), int(chunk))
                 off += chunk
             }
         }
@@ -186,8 +183,7 @@ memrchr :: proc(data: rawptr, c: u8, n: isize) -> rawptr {
 // Thread ID (simplified, not available in Odin portably)
 // =========================================================================
 thread_current_id :: proc() -> u32 {
-// Not implemented - returning 0
-    return 0
+    return u32(os.current_thread_id())
 }
 
 // =========================================================================
@@ -201,18 +197,18 @@ gbAffinity :: struct {
 }
 
 affinity_init :: proc(a: ^gbAffinity) {
-// Not implemented
+    a.is_accurate = false
+    a.core_count = 1
+    a.thread_count = 1
+    a.core_masks[0] = 1
 }
 affinity_destroy :: proc(a: ^gbAffinity) {
-// Not implemented
 }
 affinity_set :: proc(a: ^gbAffinity, core, thread: isize) -> b32 {
-// Not implemented
     return false
 }
 affinity_thread_count_for_core :: proc(a: ^gbAffinity, core: isize) -> isize {
-// Not implemented
-    return 0
+    return a.thread_count
 }
 
 // =========================================================================
@@ -971,6 +967,7 @@ murmur64_seed :: proc(data: []u8, seed: u64) -> u64 {
 gbFile :: struct {
     handle: os.Handle,
     filename: string,
+    position: i64,
     last_write_time: time.Time,
 }
 gbFileMode :: u32
@@ -980,37 +977,54 @@ gbDefaultFileOperations := struct{
 }{ } // placeholder
 
 file_get_standard :: proc(std: i32) -> ^gbFile {
-// Not implemented - returning nil
-    return nil
-}
-
-file_create :: proc(filename: string) -> ^gbFile {
-// Not implemented
-    return nil
-}
-
-file_open :: proc(filename: string) -> ^gbFile {
-    f, err := os.open(filename, os.O_RDONLY, 0)
-    if err != nil do return nil
-    return &gbFile{ handle = f, filename = filename }
-}
-
-file_open_mode :: proc(filename: string, mode: gbFileMode) -> ^gbFile {
-// Not fully implemented, only read mode is supported
-    if mode & GB_FILE_MODE_READ != 0 {
-        return file_open(filename)
+    switch std {
+    case 0: return &gbFile{ handle = os.stdin,  filename = "<stdin>"  }
+    case 1: return &gbFile{ handle = os.stdout, filename = "<stdout>" }
+    case 2: return &gbFile{ handle = os.stderr, filename = "<stderr>" }
     }
     return nil
 }
 
+file_create :: proc(filename: string) -> ^gbFile {
+    return file_open_mode(filename, GB_FILE_MODE_WRITE | GB_FILE_MODE_RW)
+}
+
+file_open :: proc(filename: string) -> ^gbFile {
+    return file_open_mode(filename, GB_FILE_MODE_READ)
+}
+
+file_open_mode :: proc(filename: string, mode: gbFileMode) -> ^gbFile {
+    flags: int
+    if mode & GB_FILE_MODE_READ != 0  { flags |= os.O_RDONLY }
+    if mode & GB_FILE_MODE_WRITE != 0 { flags |= os.O_WRONLY }
+    if mode & GB_FILE_MODE_RW != 0    { flags = (flags & ~os.O_RDONLY) | os.O_RDWR }
+    if mode & GB_FILE_MODE_APPEND != 0 { flags |= os.O_APPEND | os.O_CREATE }
+    if flags == 0 { flags = os.O_RDONLY }
+
+    handle, err := os.open(filename, flags, 0)
+    if err != nil do return nil
+    f := new(gbFile, context.allocator)
+    f.handle = handle
+    f.filename = strings.clone(filename, context.allocator)
+    f.position = 0
+    if mode & GB_FILE_MODE_APPEND != 0 {
+        f.position, _ = os.seek(handle, 0, os.SEEK_END)
+    }
+    return f
+}
+
 file_new :: proc(fd: rawptr, ops: any, filename: string) -> ^gbFile {
-// Not implemented
-    return nil
+    f := new(gbFile, context.allocator)
+    f.handle = cast(os.Handle)fd
+    f.filename = strings.clone(filename, context.allocator)
+    return f
 }
 
 file_close :: proc(f: ^gbFile) {
     if f != nil && f.handle != os.INVALID_HANDLE {
         os.close(f.handle)
+        delete(f.filename)
+        free(f)
     }
 }
 
@@ -1035,27 +1049,31 @@ file_write_at :: proc(f: ^gbFile, data: []u8, offset: i64) -> bool {
 }
 
 file_seek :: proc(f: ^gbFile, offset: i64) -> i64 {
-// Not implemented
-    return 0
+    f.position = offset
+    return f.position
 }
 file_seek_to_end :: proc(f: ^gbFile) -> i64 {
-// Not implemented
-    return 0
+    f.position, _ = os.seek(f.handle, 0, os.SEEK_END)
+    return f.position
 }
 file_skip :: proc(f: ^gbFile, bytes: i64) -> i64 {
-// Not implemented
-    return 0
+    f.position += bytes
+    return f.position
 }
 file_tell :: proc(f: ^gbFile) -> i64 {
-// Not implemented
-    return 0
+    return f.position
 }
 file_read :: proc(f: ^gbFile, buffer: []u8) -> bool {
-// Sequential read not implemented; fallback to current position? Not supported by os.read
-    return false
+    n, err := os.read_at(f.handle, buffer, f.position)
+    if err != nil do return false
+    f.position += i64(n)
+    return true
 }
 file_write :: proc(f: ^gbFile, data: []u8) -> bool {
-    return false
+    n, err := os.write_at(f.handle, data, f.position)
+    if err != nil do return false
+    f.position += i64(n)
+    return true
 }
 file_size :: proc(f: ^gbFile) -> i64 {
     if f == nil do return 0
@@ -1066,15 +1084,13 @@ file_name :: proc(f: ^gbFile) -> string {
     return f.filename
 }
 file_truncate :: proc(f: ^gbFile, size: i64) -> bool {
-// Not implemented
-    return false
+    return os.truncate(f.handle, size) == nil
 }
 file_has_changed :: proc(f: ^gbFile) -> bool {
     info, err := os.stat(f.filename)
     if err != nil do return false
-    new_time := info.modification_time
-    changed := new_time != f.last_write_time
-    f.last_write_time = new_time
+    changed := info.modification_time != f.last_write_time
+    f.last_write_time = info.modification_time
     return changed
 }
 
@@ -1083,7 +1099,7 @@ file_exists :: proc(filename: string) -> bool {
 }
 file_last_write_time :: proc(filename: string) -> time.Time {
     info, err := os.stat(filename)
-    if err != nil do return time.Time{ }
+    if err != nil do return time.Time{}
     return info.modification_time
 }
 file_copy :: proc(existing, new: string, fail_if_exists: bool) -> bool {
@@ -1103,9 +1119,6 @@ file_read_contents :: proc(filename: string, zero_terminate: bool, alloc := cont
     data, ok := os.read_entire_file(filename, alloc)
     if !ok do return nil, false
     if zero_terminate {
-    // Append null terminator (already a slice, but we need to ensure there's one)
-    // Odin's read_entire_file returns exactly the file content without extra space,
-    // so we must allocate a new slice with +1.
         new_data := make([]u8, len(data) + 1, alloc)
         copy(new_data, data)
         new_data[len(data)] = 0
@@ -1155,7 +1168,7 @@ printf_err :: proc(format: string, args: ..any) {
 fprintf :: proc(f: ^gbFile, format: string, args: ..any) {
     if f == nil do return
     s := fmt.tprintf(format, ..args)
-    os.write_string(f.handle, s)
+    file_write(f, transmute([]u8)s)
 }
 bprintf :: proc(format: string, args: ..any) -> string {
     return fmt.tprintf(format, ..args)
