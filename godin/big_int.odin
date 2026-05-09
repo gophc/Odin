@@ -137,6 +137,7 @@ big_int_from_string :: proc(dst: ^BigInt, s: string, success: ^bool) {
     mp_zero(dst)
 
     digit: BigInt
+    big_int_from_u64(&digit, 0)
     defer big_int_dealloc(&digit)
 
     i := 0
@@ -165,7 +166,7 @@ big_int_from_string :: proc(dst: ^BigInt, s: string, success: ^bool) {
             break
         }
 
-        big_int_from_u64(&digit, v)
+        mp_set_u64(&digit, v)
         big_int_mul_eq(dst, &b)
         big_int_add_eq(dst, &digit)
         i += 1
@@ -203,7 +204,6 @@ big_int_from_string :: proc(dst: ^BigInt, s: string, success: ^bool) {
         }
 
         tmp: BigInt
-        mp_init(&tmp)
         defer big_int_dealloc(&tmp)
         big_int_exp_u64(&tmp, &b, exp, success)
         big_int_mul_eq(dst, &tmp)
