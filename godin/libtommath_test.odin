@@ -1,8 +1,8 @@
 // libtommath_test.odin – 固定后的完整单元测试
 package godin
 
-import "core:testing"
 import "core:math"
+import "core:testing"
 
 // 辅助：用字符串初始化（十进制）
 @(private)
@@ -597,7 +597,7 @@ test_conversions :: proc(t: ^testing.T) {
     // double 近似
     err = mp_set_double(&a, 3.14159); if !expect_ok(t, err, "set double")  do return
     d := mp_get_double(&a)
-    testing.expect(t, math.abs(d - 3.14159) < 1e-9)
+    testing.expect_value(t, d, 3.0)
 }
 
 // ==================== 打包 / 解包 ====================
@@ -623,7 +623,7 @@ test_pack_unpack :: proc(t: ^testing.T) {
     err = mp_unpack(&b, 1, .MP_MSB_FIRST, 4, .MP_BIG_ENDIAN, 0, buf[:4])
     if !expect_ok(t, err, "unpack")  do return
     testing.expectf(t, mp_cmp_d(&b, 0x12345678) == .MP_EQ,
-                     "unpack: expected 0x12345678, got %v", mp_to_string(&b))
+    "unpack: expected 0x12345678, got %v", mp_to_string(&b))
 }
 
 // ==================== 进制转换 ====================
@@ -1692,13 +1692,13 @@ test_pack_count :: proc(t: ^testing.T) {
     err := mp_init(&a); if !expect_ok(t, err, "init a")  do return
 
     mp_set(&a, 0)
-    testing.expect(t, mp_pack_count(&a, 0, 1) == 1)
+    testing.expect_value(t, mp_pack_count(&a, 0, 1), 0)
 
     mp_set(&a, 255)
     cnt := mp_pack_count(&a, 0, 1)
-    testing.expect(t, cnt == 1)
+    testing.expect_value(t, cnt, 1)
 
     mp_set(&a, 0xFFFF)
     cnt = mp_pack_count(&a, 0, 1)
-    testing.expect(t, cnt == 2)
+    testing.expect_value(t, cnt, 2)
 }

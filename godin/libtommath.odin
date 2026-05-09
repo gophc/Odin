@@ -238,6 +238,12 @@ mp_cmp_mag :: proc(a: ^mp_int, b: ^mp_int) -> mp_ord {
 }
 
 mp_cmp_d :: proc(a: ^mp_int, b: mp_digit) -> mp_ord {
+    if b >= MP_DIGIT_MAX {
+        v := mp_get_mag_u64(a)
+        if v > u64(b) do return .MP_LT
+        if v < u64(b) do return .MP_GT
+        return .MP_EQ
+    }
     if a.used == 0 {
         if b == 0 {
             return .MP_EQ
@@ -1508,6 +1514,10 @@ mp_sqrt :: proc(arg: ^mp_int, ret: ^mp_int) -> mp_err {
 
 mp_root_n :: proc(a: ^mp_int, b: int, c: ^mp_int) -> mp_err {
 // See original; implement Newton's method
+    if a.used == 0 {
+        mp_set(c, 0)
+        return .MP_OKAY
+    }
     if b < 0 || uint(b) > MP_MASK do return .MP_VAL
     if (b & 1) == 0 && a.sign == .MP_NEG do return .MP_VAL
     t1, t2, t3, a_: mp_int
