@@ -181,6 +181,7 @@ mp_2expt :: proc(a: ^mp_int, b: int) -> mp_err {
     size := b / DIGIT_BIT + 1
     err := mp_grow(a, size); if err != .MP_OKAY do return err
     a.used = size
+    s_mp_zero_digs(a.dp[:size])
     a.dp[b / DIGIT_BIT] = 1 << uint(b % DIGIT_BIT)
     return .MP_OKAY
 }
