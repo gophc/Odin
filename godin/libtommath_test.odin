@@ -696,7 +696,8 @@ test_bit_counts :: proc(t: ^testing.T) {
 
     // count_bits on larger value
     mp_set(&a, 0xFFFFFFFF)
-    testing.expect(t, mp_count_bits(&a) == 32)
+    n := mp_count_bits(&a)
+    testing.expect(t, n == 32)
 }
 
 // ==================== 否决与绝对值 ====================
@@ -890,11 +891,14 @@ test_2k_checks :: proc(t: ^testing.T) {
 
     mp_set(&a, 0)
     testing.expect(t, mp_reduce_is_2k(&a) == false)
-    testing.expect(t, mp_reduce_is_2k_l(&a) == false)
+    testing.expect(t, mp_reduce_is_2k_l(&a) == false, "0 mp_reduce_is_2k_l")
+
+    mp_set(&a, 4)
+    testing.expect(t, mp_reduce_is_2k(&a) == true, "4 mp_reduce_is_2k")
 
     // 2^k - 1 形式
     mp_set(&a, 3)
-    testing.expect(t, mp_reduce_is_2k_l(&a) == true)
+    testing.expect(t, mp_reduce_is_2k_l(&a) == true, "3 mp_reduce_is_2k_l")
 }
 
 // ==================== 取模与大数的除法与乘法 ====================
@@ -1162,8 +1166,15 @@ test_add_extended :: proc(t: ^testing.T) {
 
     // addition that produces 进位
     mp_2expt(&a, 62); mp_2expt(&b, 62)
+    testing.expect(t, mp_count_bits(&a) == 63) // 2^62
     err = mp_add(&a, &b, &c); if !expect_ok(t, err, "2^62+2^62")  do return
-    testing.expect(t, mp_count_bits(&c) == 63) // 2^63
+    mp_2expt(&a, 6)
+    testing.expect(t, mp_count_bits(&a) == 7, "a 2^6 expect") // 2^6
+    mp_2expt(&b, 63)
+    testing.expect(t, mp_count_bits(&b) == 64, "b 2^63 expect") // 2^63
+    expect_eq(t, &c, &b, "2^62+2^62 != 2^63 mp_2expt")
+    n := mp_count_bits(&c)
+    testing.expect(t, n == 64, "c 2^63 expect") // 2^63
 }
 
 // ==================== 减法扩展 ====================

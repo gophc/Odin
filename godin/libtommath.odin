@@ -137,10 +137,15 @@ mp_grow :: proc(a: ^mp_int, size: int) -> mp_err {
 mp_zero :: proc(a: ^mp_int) {
     a.used = 0
     a.sign = .MP_ZPOS
-// Digits are effectively zero, no need to clear.
+    s_mp_zero_digs(a.dp[a.used:])
 }
 
 mp_set :: proc(a: ^mp_int, b: mp_digit) {
+    if b >= MP_MASK {
+        mp_set_i64(a, i64(b))
+        return
+    }
+
     a.dp[0] = b & MP_MASK
     if a.dp[0] != 0 {
         a.used = 1
@@ -2235,7 +2240,7 @@ mp_from_sbin :: proc(a: ^mp_int, buf: []u8) -> mp_err {
 }
 
 mp_to_sbin :: proc(a: ^mp_int) -> (buf: []u8, err: mp_err) {
-    ubin, uerr := mp_to_ubin(a)
+    ubin, uerr := mp_to_ubin(a); defer delete(ubin)
     if uerr != .MP_OKAY do return nil, uerr
     buf = make([]u8, 1 + len(ubin))
     buf[0] = 1 if a.sign == .MP_NEG else 0
