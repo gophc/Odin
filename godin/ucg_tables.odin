@@ -1,7 +1,7 @@
 // unicode.odin - Pure Odin rewrite of unicode.i.cpp
 package godin
 
-ucg_spacing_mark_ranges :: []i32{
+ucg_spacing_mark_ranges := [?]i32{
     0x0903, 0x0903,
     0x093B, 0x093B,
     0x093E, 0x0940,
@@ -185,7 +185,7 @@ ucg_spacing_mark_ranges :: []i32{
     0x1D165, 0x1D166,
     0x1D16D, 0x1D172,
 };
-ucg_nonspacing_mark_ranges :: []i32{
+ucg_nonspacing_mark_ranges := [?]i32{
     0x0300, 0x036F,
     0x0483, 0x0487,
     0x0591, 0x05BD,
@@ -533,7 +533,7 @@ ucg_nonspacing_mark_ranges :: []i32{
     0x1E944, 0x1E94A,
     0xE0100, 0xE01EF,
 };
-ucg_emoji_extended_pictographic_ranges :: []i32{
+ucg_emoji_extended_pictographic_ranges := [?]i32{
     0x00A9, 0x00A9,
     0x00AE, 0x00AE,
     0x203C, 0x203C,
@@ -1046,7 +1046,7 @@ ucg_emoji_extended_pictographic_ranges :: []i32{
     0x1FAF9, 0x1FAFF,
     0x1FC00, 0x1FFFD,
 };
-ucg_grapheme_extend_ranges :: []i32{
+ucg_grapheme_extend_ranges := [?]i32{
     0x0300, 0x036F,
     0x0483, 0x0487,
     0x0488, 0x0489,
@@ -1424,7 +1424,7 @@ ucg_grapheme_extend_ranges :: []i32{
     0xE0020, 0xE007F,
     0xE0100, 0xE01EF,
 };
-ucg_hangul_syllable_lv_singlets :: []i32{
+ucg_hangul_syllable_lv_singlets := [?]i32{
     0xAC00,
     0xAC1C,
     0xAC38,
@@ -1825,7 +1825,7 @@ ucg_hangul_syllable_lv_singlets :: []i32{
     0xD76C,
     0xD788,
 };
-ucg_hangul_syllable_lvt_ranges :: []i32{
+ucg_hangul_syllable_lvt_ranges := [?]i32{
     0xAC01, 0xAC1B,
     0xAC1D, 0xAC37,
     0xAC39, 0xAC53,
@@ -2226,7 +2226,7 @@ ucg_hangul_syllable_lvt_ranges :: []i32{
     0xD76D, 0xD787,
     0xD789, 0xD7A3,
 };
-ucg_indic_conjunct_break_consonant_ranges :: []i32{
+ucg_indic_conjunct_break_consonant_ranges := [?]i32{
     0x0915, 0x0939,
     0x0958, 0x095F,
     0x0978, 0x097F,
@@ -2254,7 +2254,7 @@ ucg_indic_conjunct_break_consonant_ranges :: []i32{
     0x0C58, 0x0C5A,
     0x0D15, 0x0D3A,
 };
-ucg_indic_conjunct_break_extend_ranges :: []i32{
+ucg_indic_conjunct_break_extend_ranges := [?]i32{
     0x0300, 0x034E,
     0x0350, 0x036F,
     0x0483, 0x0487,
@@ -2426,7 +2426,7 @@ ucg_indic_conjunct_break_extend_ranges :: []i32{
     0x1E8D0, 0x1E8D6,
     0x1E944, 0x1E94A,
 };
-ucg_normalized_east_asian_width_ranges :: []i32{
+ucg_normalized_east_asian_width_ranges := [?]i32{
     0x0000, 0x10FF, 1,
     0x1100, 0x115F, 2,
     0x1160, 0x2319, 1,

@@ -147,7 +147,7 @@ test_utf8proc_category :: proc(t: ^testing.T) {
 test_utf8proc_decompose_char_NFD :: proc(t: ^testing.T) {
 // é (U+00E9) decomposes to e + combining acute accent
     buf: [8]i32
-    last_bc : int = 0
+    last_bc : i32 = 0
     n := utf8proc_decompose_char(0xE9, buf[:], len(buf), { .DECOMPOSE }, &last_bc)
     testing.expect(t, n == 2)
     testing.expect(t, buf[0] == 0x65) // e
@@ -158,7 +158,7 @@ test_utf8proc_decompose_char_NFD :: proc(t: ^testing.T) {
 test_utf8proc_decompose_char_hangul :: proc(t: ^testing.T) {
 // Hangul syllable '한' (U+D55C)
     buf: [8]i32
-    last_bc : int = 0
+    last_bc : i32 = 0
     n := utf8proc_decompose_char(0xD55C, buf[:], len(buf), { .DECOMPOSE }, &last_bc)
     testing.expect(t, n == 3, "한 should decompose to 3 jamo")
     testing.expect(t, buf[0] == 0x1112) // ᄒ

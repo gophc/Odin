@@ -11,7 +11,7 @@ package godin
 
 
 
-utf8proc_properties :: []utf8proc_property_t{
+utf8proc_properties := [?]utf8proc_property_t{
     { 0, 0, 0, 0, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, false, false, false, false, 0, 0, OTHER },
     { CC, 0, _BN, 0, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, false, true, false, true, 0, 0, CONTROL },
     { CC, 0, _BN, 0, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, false, false, false, true, 0, 0, CONTROL },

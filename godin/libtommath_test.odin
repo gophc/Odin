@@ -2,6 +2,7 @@
 package godin
 
 import "core:testing"
+import "core:math"
 
 // 辅助：用字符串初始化（十进制）
 @(private)
@@ -872,7 +873,7 @@ test_dr_reduction :: proc(t: ^testing.T) {
         // 计算 a mod m via DR
         mp_mod(&a, &m, &a) // direct mod for reference
         b: mp_int; defer mp_clear(&b)
-        mp_init_copy(&b, &a) or_return
+        err = mp_init_copy(&b, &a);  if !expect_ok(t, err, "init_copy")  do return
         // DR reduce should give same result (if |a| < m)
         err = mp_dr_reduce(&b, &m, rho); if !expect_ok(t, err, "dr_reduce")  do return
         testing.expect(t, mp_cmp(&a, &b) == .MP_EQ)
@@ -947,8 +948,9 @@ test_mul_karatsuba :: proc(t: ^testing.T) {
     // 验证: c / a = b
     q, r: mp_int
     defer mp_clear(&q); defer mp_clear(&r)
-    mp_init(&q) or_return; mp_init(&r) or_return
-    mp_div(&c, &a, &q, &r) or_return
+    err = mp_init(&q);  if !expect_ok(t, err, "init q")  do return
+    err = mp_init(&r);  if !expect_ok(t, err, "init r")  do return
+    err = mp_div(&c, &a, &q, &r);  if !expect_ok(t, err, "mp_div")  do return
     testing.expectf(t, mp_cmp(&b, &q) == .MP_EQ, "(2^84 * n) / 2^84 == n")
 }
 
@@ -1213,7 +1215,7 @@ test_convert_edge :: proc(t: ^testing.T) {
     testing.expect(t, a.sign == .MP_NEG)
 
     // NaN / Inf should error
-    err = mp_set_double(&a, 1.0 / 0.0) // infinity
+    err = mp_set_double(&a, math.inf_f64(0)) // infinity
     testing.expect(t, err == .MP_VAL)
 
     // get_double 0
@@ -1268,7 +1270,7 @@ test_convenience_inits :: proc(t: ^testing.T) {
 
     // init_copy
     b: mp_int; defer mp_clear(&b)
-    mp_init(&b) or_return
+    err = mp_init(&b); if !expect_ok(t, err, "init b")  do return
     mp_set(&b, 12345)
     err = mp_init_copy(&a, &b); if !expect_ok(t, err, "init_copy")  do return
     testing.expect(t, mp_cmp(&a, &b) == .MP_EQ)
@@ -1657,8 +1659,8 @@ test_mul_toom :: proc(t: ^testing.T) {
 
     // 验证: c / a = b
     q: mp_int; defer mp_clear(&q)
-    mp_init(&q) or_return
-    mp_div(&c, &a, &q, nil) or_return
+    err = mp_init(&q); if !expect_ok(t, err, "init q")  do return
+    err = mp_div(&c, &a, &q, nil); if !expect_ok(t, err, "mp_div")  do return
     expect_eq(t, &b, &q, "c/a == b")
 }
 
@@ -1678,8 +1680,8 @@ test_mul_balance :: proc(t: ^testing.T) {
     err = mp_mul(&a, &b, &c); if !expect_ok(t, err, "balance mul")  do return
 
     q: mp_int; defer mp_clear(&q)
-    mp_init(&q) or_return
-    mp_div(&c, &a, &q, nil) or_return
+    err = mp_init(&q); if !expect_ok(t, err, "init q")  do return
+    err = mp_div(&c, &a, &q, nil); if !expect_ok(t, err, "mp_div")  do return
     expect_eq(t, &b, &q, "c/a == b")
 }
 

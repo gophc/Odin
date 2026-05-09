@@ -150,20 +150,18 @@ utf8proc_errmsg :: proc(errcode: int) -> string {
 
 
 utf8proc_iterate :: proc(str: []u8, strlen: int, dst: ^i32) -> int {
-    uc: u32
     end_ptr: ^u8
-    p := &str[0]
-
     dst^ = -1
-    if strlen == 0 {
-        return 0
-    }
+    if strlen == 0 do return 0
     if strlen < 0 {
-        end_ptr = (^u8)(uintptr(&str[0]) + 4) // unsafe, but logic says up to 4 bytes
+        end_ptr = mem.ptr_offset(&str[0], 4) // unsafe, but logic says up to 4 bytes
     } else {
-        end_ptr = (^u8)(uintptr(&str[0]) + uintptr(strlen))
+        end_ptr = mem.ptr_offset(&str[0], strlen)
     }
-    uc = u32(p^); p = &str[1]
+
+    uc := u32(str[0])
+    str := str[1:]
+    p := &str[0]
     if uc < 0x80 {
         dst^ = i32(uc)
         return 1
@@ -179,13 +177,13 @@ utf8proc_iterate :: proc(str: []u8, strlen: int, dst: ^i32) -> int {
         return 2
     }
     if uc < 0xf0 {
-        if (^u8)(uintptr(p) + 1) >= end_ptr || (p^ & 0xc0) != 0x80 || (p[1] & 0xc0) != 0x80 {
+        if mem.ptr_offset(p, 1) >= end_ptr || (p^ & 0xc0) != 0x80 || (str[1] & 0xc0) != 0x80 {
             return -3
         }
         if uc == 0xed && p^ > 0x9f {
             return -3
         }
-        uc = (uc & 0xf) << 12 | u32(p^ & 0x3f) << 6 | u32(p[1] & 0x3f)
+        uc = (uc & 0xf) << 12 | u32(p^ & 0x3f) << 6 | u32(str[1] & 0x3f)
         if uc < 0x800 {
             return -3
         }
@@ -193,7 +191,7 @@ utf8proc_iterate :: proc(str: []u8, strlen: int, dst: ^i32) -> int {
         return 3
     }
     // 4-byte sequence
-    if (^u8)(uintptr(p) + 2) >= end_ptr || (p^ & 0xc0) != 0x80 || (p[1] & 0xc0) != 0x80 || (p[2] & 0xc0) != 0x80 {
+    if mem.ptr_offset(p, 2) >= end_ptr || (p^ & 0xc0) != 0x80 || (str[1] & 0xc0) != 0x80 || (str[2] & 0xc0) != 0x80 {
         return -3
     }
     if uc == 0xf0 {
@@ -205,7 +203,7 @@ utf8proc_iterate :: proc(str: []u8, strlen: int, dst: ^i32) -> int {
             return -3
         }
     }
-    dst^ = i32((uc & 7) << 18 | u32(p^ & 0x3f) << 12 | u32(p[1] & 0x3f) << 6 | u32(p[2] & 0x3f))
+    dst^ = i32((uc & 7) << 18 | u32(p^ & 0x3f) << 12 | u32(str[1] & 0x3f) << 6 | u32(str[2] & 0x3f))
     return 4
 }
 
@@ -356,14 +354,14 @@ utf8proc_grapheme_break :: proc(c1, c2: i32) -> bool {
 }
 
 @(private)
-seqindex_decode_entry :: proc(entry: ^u16) -> (next_entry: ^u16, codepoint: i32) {
-    entry_cp := i32(entry^)
-    next_entry = entry[1:]  // 默认前进一步
+seqindex_decode_entry :: proc(seqindex: u32) -> (next_seqindex: u32, codepoint: i32) {
+    entry_cp := i32(utf8proc_sequences[seqindex])
+    next_seqindex = seqindex + 1  // 默认前进一步
     if (entry_cp & 0xF800) == 0xD800 {
         high := u32(entry_cp & 0x03FF) << 10
-        low := u32(next_entry^)
+        low := u32(utf8proc_sequences[next_seqindex])
         codepoint = i32(high | low) + 0x10000
-        next_entry = next_entry[1:] // 消耗两个 u16
+        next_seqindex += 1 // 消耗两个 u16
     } else {
         codepoint = entry_cp
     }
@@ -372,8 +370,7 @@ seqindex_decode_entry :: proc(entry: ^u16) -> (next_entry: ^u16, codepoint: i32)
 
 @(private)
 seqindex_decode_index :: proc(seqindex: u32) -> (codepoint: i32) {
-    entry := &utf8proc_sequences[seqindex]
-    entry, codepoint = seqindex_decode_entry(entry)
+    _, codepoint = seqindex_decode_entry(seqindex)
     return
 }
 
@@ -383,19 +380,19 @@ seqindex: u16,
 dst: []i32,
 bufsize: int,
 options: utf8proc_option_t,
-last_boundclass: ^int,
+last_boundclass: ^i32,
 ) -> int {
     written := 0
-    entry := &utf8proc_sequences[seqindex & 0x1FFF]
+    seqindex := u32(seqindex & 0x1FFF)
     len_ := int(seqindex >> 13)
     if len_ >= 7 {
-        len_ = int(entry^)
-        entry = entry[1]
+        len_ = int(utf8proc_sequences[seqindex])
+        seqindex += 1
     }
-    entry_cp :i32
+    codepoint :i32
     for idx := 0; idx <= len_; idx += 1 {
-        entry, entry_cp = seqindex_decode_entry(entry)
-        n := utf8proc_decompose_char(entry_cp, dst[written:], max(0, bufsize - written), options, last_boundclass)
+        _, codepoint = seqindex_decode_entry(seqindex)
+        n := utf8proc_decompose_char(codepoint, dst[written:], max(0, bufsize - written), options, last_boundclass)
         if n < 0 {
             return -2
         }
@@ -445,7 +442,7 @@ uc: i32,
 dst: []i32,
 bufsize: int,
 options: utf8proc_option_t,
-last_boundclass: ^int,
+last_boundclass: ^i32,
 ) -> int {
     if uc < 0 || uc >= 0x110000 {
         return -4
@@ -489,7 +486,7 @@ last_boundclass: ^int,
 
     if .LUMP in options {
         sub_options := options - { .LUMP }
-        switch category {
+        #partial switch category {
         case .ZS:
             return utf8proc_decompose_char(0x0020, dst, bufsize, sub_options, last_boundclass)
         case .PD:
@@ -656,6 +653,7 @@ custom_data: rawptr,
 utf8proc_normalize_utf32 :: proc(buffer: []i32, length: int, options: utf8proc_option_t) -> int {
     wpos := 0
     rpos := 0
+    length := length
     buf := buffer
 
     // line break and strip control characters
@@ -772,19 +770,20 @@ utf8proc_reencode :: proc(buffer: []i32, length: int, options: utf8proc_option_t
         return len
     }
 
+    tmp := mem.slice_ptr((^u8)(&buffer[0]), length * 4)
     rpos, wpos := 0, 0
     if .CHARBOUND in options {
         for rpos < len {
-            wpos += int(unsafe_encode_char(buffer[rpos], (cast(^u8)&buffer[0])[wpos:]))
+            wpos += unsafe_encode_char(buffer[rpos], tmp[wpos:])
             rpos += 1
         }
     } else {
         for rpos < len {
-            wpos += int(utf8proc_encode_char(buffer[rpos], (cast(^u8)&buffer[0])[wpos:]))
+            wpos += utf8proc_encode_char(buffer[rpos], tmp[wpos:])
             rpos += 1
         }
     }
-    (cast(^u8)&buffer[0])[wpos] = 0
+    (^u8)(&buffer[0])^ = 0
     return wpos
 }
 
@@ -849,7 +848,7 @@ rune_is_letter :: proc(r: rune) -> bool {
         }
         return (u32(r) | 0x20) - 0x61 < 26
     }
-    switch utf8proc_category(i32(r)) {
+    #partial switch utf8proc_category(i32(r)) {
     case .LU, .LL, .LT, .LM, .LO: return true
     case: return false
     }
@@ -870,7 +869,7 @@ rune_is_letter_or_digit :: proc(r: rune) -> bool {
         }
         return u32(r) - '0' < 10
     }
-    switch utf8proc_category(i32(r)) {
+    #partial switch utf8proc_category(i32(r)) {
     case .LU, .LL, .LT, .LM, .LO: return true
     case .ND: return true
     }
@@ -1195,7 +1194,7 @@ _ucg_decode_grapheme_clusters_deferred_step :: proc(state: ^ucg_decoder_state, b
             rune_index = state.rune_count,
             width      = state.width - state.last_width,
         })
-        state.last_grapheme_count = len(state.graphemes)
+        state.last_grapheme_count = i32(len(state.graphemes))
         state.last_width = state.width
     }
     state.last_rune = this_rune
