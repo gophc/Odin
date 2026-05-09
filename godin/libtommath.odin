@@ -142,7 +142,7 @@ mp_zero :: proc(a: ^mp_int) {
 
 mp_set :: proc(a: ^mp_int, b: mp_digit) {
     if b >= MP_MASK {
-        mp_set_i64(a, i64(b))
+        mp_set_u64(a, u64(b))
         return
     }
 

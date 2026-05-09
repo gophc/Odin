@@ -309,6 +309,7 @@ big_int_exp_u64 :: proc(dst: ^BigInt, x: ^BigInt, y: u64, success: ^bool) {
         success^ = false
         return
     }
+    mp_init(dst)
     err := mp_expt_n(x, int(y), dst)
     success^ = err == .MP_OKAY
 }
