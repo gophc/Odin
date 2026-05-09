@@ -160,7 +160,6 @@ utf8proc_iterate :: proc(str: []u8, strlen: int, dst: ^i32) -> int {
     }
 
     uc := u32(str[0])
-    str := str[1:]
     if uc < 0x80 {
         dst^ = i32(uc)
         return 1
@@ -169,7 +168,8 @@ utf8proc_iterate :: proc(str: []u8, strlen: int, dst: ^i32) -> int {
         return -3
     }
 
-    p := &str[0]
+    buf := str[1:]
+    p := &buf[0]
     if uc < 0xe0 {
         if p >= end_ptr || (p^ & 0xc0) != 0x80 {
             return -3
@@ -178,13 +178,13 @@ utf8proc_iterate :: proc(str: []u8, strlen: int, dst: ^i32) -> int {
         return 2
     }
     if uc < 0xf0 {
-        if mem.ptr_offset(p, 1) >= end_ptr || (p^ & 0xc0) != 0x80 || (str[1] & 0xc0) != 0x80 {
+        if mem.ptr_offset(p, 1) >= end_ptr || (p^ & 0xc0) != 0x80 || (buf[1] & 0xc0) != 0x80 {
             return -3
         }
         if uc == 0xed && p^ > 0x9f {
             return -3
         }
-        uc = (uc & 0xf) << 12 | u32(p^ & 0x3f) << 6 | u32(str[1] & 0x3f)
+        uc = (uc & 0xf) << 12 | u32(p^ & 0x3f) << 6 | u32(buf[1] & 0x3f)
         if uc < 0x800 {
             return -3
         }
@@ -192,7 +192,7 @@ utf8proc_iterate :: proc(str: []u8, strlen: int, dst: ^i32) -> int {
         return 3
     }
     // 4-byte sequence
-    if mem.ptr_offset(p, 2) >= end_ptr || (p^ & 0xc0) != 0x80 || (str[1] & 0xc0) != 0x80 || (str[2] & 0xc0) != 0x80 {
+    if mem.ptr_offset(p, 2) >= end_ptr || (p^ & 0xc0) != 0x80 || (buf[1] & 0xc0) != 0x80 || (buf[2] & 0xc0) != 0x80 {
         return -3
     }
     if uc == 0xf0 {
@@ -204,7 +204,7 @@ utf8proc_iterate :: proc(str: []u8, strlen: int, dst: ^i32) -> int {
             return -3
         }
     }
-    dst^ = i32((uc & 7) << 18 | u32(p^ & 0x3f) << 12 | u32(str[1] & 0x3f) << 6 | u32(str[2] & 0x3f))
+    dst^ = i32((uc & 7) << 18 | u32(p^ & 0x3f) << 12 | u32(buf[1] & 0x3f) << 6 | u32(buf[2] & 0x3f))
     return 4
 }
 
@@ -384,15 +384,15 @@ options: utf8proc_option_t,
 last_boundclass: ^i32,
 ) -> int {
     written := 0
-    seqindex := u32(seqindex & 0x1FFF)
-    len_ := int(seqindex >> 13)
+    seq_idx := u32(seqindex & 0x1FFF)
+    len_ := int(u32(seqindex) >> 13)
     if len_ >= 7 {
-        len_ = int(utf8proc_sequences[seqindex])
-        seqindex += 1
+        len_ = int(utf8proc_sequences[seq_idx])
+        seq_idx += 1
     }
     codepoint :i32
     for idx := 0; idx <= len_; idx += 1 {
-        seqindex, codepoint = seqindex_decode_entry(seqindex)
+        seq_idx, codepoint = seqindex_decode_entry(seq_idx)
         n := utf8proc_decompose_char(codepoint, dst[written:], max(0, bufsize - written), options, last_boundclass)
         if n < 0 {
             return -2
