@@ -159,9 +159,9 @@ utf8proc_iterate :: proc(str: []u8, strlen: int, dst: ^i32) -> int {
         return 0
     }
     if strlen < 0 {
-        end_ptr = &str[0] + 4 // unsafe, but logic says up to 4 bytes
+        end_ptr = (^u8)(uintptr(&str[0]) + 4) // unsafe, but logic says up to 4 bytes
     } else {
-        end_ptr = &str[0] + strlen
+        end_ptr = (^u8)(uintptr(&str[0]) + uintptr(strlen))
     }
     uc = u32(p^); p = &str[1]
     if uc < 0x80 {
@@ -179,7 +179,7 @@ utf8proc_iterate :: proc(str: []u8, strlen: int, dst: ^i32) -> int {
         return 2
     }
     if uc < 0xf0 {
-        if p + 1 >= end_ptr || (p^ & 0xc0) != 0x80 || (p[1] & 0xc0) != 0x80 {
+        if (^u8)(uintptr(p) + 1) >= end_ptr || (p^ & 0xc0) != 0x80 || (p[1] & 0xc0) != 0x80 {
             return -3
         }
         if uc == 0xed && p^ > 0x9f {
@@ -193,7 +193,7 @@ utf8proc_iterate :: proc(str: []u8, strlen: int, dst: ^i32) -> int {
         return 3
     }
     // 4-byte sequence
-    if p + 2 >= end_ptr || (p^ & 0xc0) != 0x80 || (p[1] & 0xc0) != 0x80 || (p[2] & 0xc0) != 0x80 {
+    if (^u8)(uintptr(p) + 2) >= end_ptr || (p^ & 0xc0) != 0x80 || (p[1] & 0xc0) != 0x80 || (p[2] & 0xc0) != 0x80 {
         return -3
     }
     if uc == 0xf0 {

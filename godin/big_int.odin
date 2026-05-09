@@ -41,10 +41,6 @@ u64_digit_value :: proc(r: rune) -> u64 {
     }
     return 0xff
 }
-@(private="file")
-char_is_digit :: proc(r: rune) -> bool {
-    return r >= '0' && r <= '9'
-}
 
 digit_to_char :: proc(digit: u8) -> u8 {
     if digit <= 9 {
@@ -190,7 +186,7 @@ big_int_from_string :: proc(dst: ^BigInt, s: string, success: ^bool) {
                 i += 1; continue
             }
             v: u64
-            if char_is_digit(r) {
+            if r >= '0' && r <= '9' {
                 v = u64_digit_value(r)
             } else {
                 success^ = false
