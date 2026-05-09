@@ -1,6 +1,7 @@
 package godin
 
 import "core:fmt"
+import "core:math/bits"
 
 // --------------- Type alias ---------------
 BigInt :: mp_int
@@ -40,7 +41,7 @@ u64_digit_value :: proc(r: rune) -> u64 {
     }
     return 0xff
 }
-
+@(private="file")
 char_is_digit :: proc(r: rune) -> bool {
     return r >= '0' && r <= '9'
 }
@@ -57,7 +58,7 @@ digit_to_char :: proc(digit: u8) -> u8 {
 
 leading_zeros_u64 :: proc(x: u64) -> u64 {
     if x == 0 do return 64
-    return u64(intrinsics.count_leading_zeros(x))
+    return u64(bits.count_leading_zeros(x))
 }
 
 // --------------- Initialization / Deallocation ---------------

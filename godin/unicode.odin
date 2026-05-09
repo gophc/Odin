@@ -7,21 +7,21 @@ import "core:mem"
 // Constants (utf8proc options flags as bit set)
 // ---------------------------------------------------------------------------
 utf8proc_option :: enum u32 {
-    NULLTERM  = 1 << 0,
-    STABLE    = 1 << 1,
-    COMPAT    = 1 << 2,
-    COMPOSE   = 1 << 3,
-    DECOMPOSE = 1 << 4,
-    IGNORE    = 1 << 5,
-    REJECTNA  = 1 << 6,
-    NLF2LS    = 1 << 7,
-    NLF2PS    = 1 << 8,
+    NULLTERM  =  0,
+    STABLE    =  1,
+    COMPAT    =  2,
+    COMPOSE   =  3,
+    DECOMPOSE =  4,
+    IGNORE    =  5,
+    REJECTNA  =  6,
+    NLF2LS    =  7,
+    NLF2PS    =  8,
     NLF2LF    = NLF2LS | NLF2PS,
-    STRIPCC   = 1 << 9,
-    CASEFOLD  = 1 << 10,
-    CHARBOUND = 1 << 11,
-    LUMP      = 1 << 12,
-    STRIPMARK = 1 << 13,
+    STRIPCC   =  9,
+    CASEFOLD  =  10,
+    CHARBOUND =  11,
+    LUMP      =  12,
+    STRIPMARK =  13,
 }
 utf8proc_option_t :: bit_set[utf8proc_option]
 
