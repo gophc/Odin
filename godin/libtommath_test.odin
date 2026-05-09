@@ -594,9 +594,9 @@ test_conversions :: proc(t: ^testing.T) {
     testing.expect(t, mp_get_mag_u64(&a) == big)
 
     // double 近似
-    err = mp_set_double(&a, 3.0); if !expect_ok(t, err, "set double")  do return
+    err = mp_set_double(&a, 3.14159); if !expect_ok(t, err, "set double")  do return
     d := mp_get_double(&a)
-    testing.expect(t, d == 3.0)
+    testing.expect(t, math.abs(d - 3.14159) < 1e-9)
 }
 
 // ==================== 打包 / 解包 ====================
@@ -606,22 +606,23 @@ test_pack_unpack :: proc(t: ^testing.T) {
     defer mp_clear(&a)
 
     err := mp_init(&a); if !expect_ok(t, err, "init a")  do return
-    mp_set(&a, 0x12)
+    mp_set(&a, 0x12345678)
 
     buf := make([]u8, 8)
     defer delete(buf)
 
-    written, err2 := mp_pack(buf, .MP_MSB_FIRST, 1, .MP_BIG_ENDIAN, 0, &a)
+    written, err2 := mp_pack(buf, .MP_MSB_FIRST, 4, .MP_BIG_ENDIAN, 0, &a)
     if !expect_ok(t, err2, "pack")  do return
+    testing.expect(t, written == 1)
 
     // 解包
     b: mp_int
     defer mp_clear(&b)
     err = mp_init(&b); if !expect_ok(t, err, "init b")  do return
-    err = mp_unpack(&b, 1, .MP_MSB_FIRST, 1, .MP_BIG_ENDIAN, 0, buf[:written])
+    err = mp_unpack(&b, 1, .MP_MSB_FIRST, 4, .MP_BIG_ENDIAN, 0, buf[:4])
     if !expect_ok(t, err, "unpack")  do return
-    testing.expectf(t, mp_cmp_d(&b, 0x12) == .MP_EQ,
-    "unpack: expected 0x12, got %v", mp_to_string(&b))
+    testing.expectf(t, mp_cmp_d(&b, 0x12345678) == .MP_EQ,
+                     "unpack: expected 0x12345678, got %v", mp_to_string(&b))
 }
 
 // ==================== 进制转换 ====================
@@ -634,12 +635,14 @@ test_radix :: proc(t: ^testing.T) {
 
     err = mp_from_string(&a, "12345"); if !expect_ok(t, err, "from dec")  do return
     str, err2 := mp_to_radix(&a, 10)
+
     testing.expectf(t, err2 == .MP_OKAY && str == "12345",
     "dec roundtrip: expected 12345, got %v (err=%v)", str, err2)
 
     // 十六进制
     err = mp_read_radix(&a, "1A2B3C", 16); if !expect_ok(t, err, "read hex")  do return
     hex, _ := mp_to_radix(&a, 16)
+
     // 转换结果应全大写
     testing.expectf(t, hex == "1A2B3C", "hex roundtrip: expected 1A2B3C, got %v", hex)
 }
