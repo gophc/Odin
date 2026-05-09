@@ -336,3 +336,8 @@ odingo/odingo.7z
 phpsdk-starter.bat
 phpsdk-vs17-x64.bat
 phpsdk_setshell.bat
+*.i2.cpp
+*.i2.hpp
+*.i2.c
+*.i2.h
+godin/cmd/cmd.7z
