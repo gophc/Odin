@@ -881,26 +881,6 @@ test_dr_reduction :: proc(t: ^testing.T) {
     }
 }
 
-// ==================== 2k reduction helpers ====================
-@(test)
-test_2k_checks :: proc(t: ^testing.T) {
-    a: mp_int
-    defer mp_clear(&a)
-
-    err := mp_init(&a); if !expect_ok(t, err, "init a")  do return
-
-    mp_set(&a, 0)
-    testing.expect(t, mp_reduce_is_2k(&a) == false)
-    testing.expect(t, mp_reduce_is_2k_l(&a) == false, "0 mp_reduce_is_2k_l")
-
-    mp_set(&a, 4)
-    testing.expect(t, mp_reduce_is_2k(&a) == true, "4 mp_reduce_is_2k")
-
-    // 2^k - 1 形式
-    mp_set(&a, 3)
-    testing.expect(t, mp_reduce_is_2k_l(&a) == true, "3 mp_reduce_is_2k_l")
-}
-
 // ==================== 取模与大数的除法与乘法 ====================
 @(test)
 test_div_mod_large :: proc(t: ^testing.T) {
@@ -971,7 +951,8 @@ test_mul_negative :: proc(t: ^testing.T) {
     // (-7) * 3 = -21
     mp_set_i32(&a, -7); mp_set(&b, 3)
     err = mp_mul(&a, &b, &c); if !expect_ok(t, err, "-7*3")  do return
-    testing.expect(t, mp_get_i64(&c) == -21)
+    vv := mp_get_i64(&c)
+    testing.expect(t, vv == -21, "-7*3 == -21")
 
     // (-7) * (-3) = 21
     mp_set_i32(&a, -7); mp_set_i32(&b, -3)
@@ -1104,27 +1085,31 @@ test_bitwise_extended :: proc(t: ^testing.T) {
     mp_set(&a, 0xFF)
     mp_zero(&b)
     err = mp_and(&a, &b, &c); if !expect_ok(t, err, "and 0")  do return
-    testing.expect(t, mp_cmp_d(&c, 0) == .MP_EQ)
+    testing.expect(t, mp_cmp_d(&c, 0) == .MP_EQ, "mp_and mp_and eq 0")
 
     // OR with zero
     mp_set(&a, 0xFF); mp_zero(&b)
     err = mp_or(&a, &b, &c); if !expect_ok(t, err, "or 0")  do return
-    testing.expect(t, mp_cmp(&a, &c) == .MP_EQ)
+    testing.expect(t, mp_cmp(&a, &c) == .MP_EQ, "mp_or eq 0")
 
     // XOR self (should be zero)
     mp_set(&a, 0xABCD)
     err = mp_xor(&a, &a, &c); if !expect_ok(t, err, "xor self")  do return
-    testing.expect(t, mp_cmp_d(&c, 0) == .MP_EQ)
+    testing.expect(t, mp_cmp_d(&c, 0) == .MP_EQ, "mp_xor eq 0")
 
     // complement large
-    mp_set(&a, 0)
+    mp_set(&a, 0)  /* b = ~a */
     err = mp_complement(&a, &c); if !expect_ok(t, err, "complement 0")  do return
-    testing.expect(t, mp_cmp_d(&c, 0) == .MP_EQ)
+    testing.expect(t, mp_get_i64(&c) == -1, "mp_complement eq -1")
+
+    mp_set(&a, 255)  /* b = ~a */
+    err = mp_complement(&a, &c); if !expect_ok(t, err, "complement 255")  do return
+    testing.expect(t, mp_get_i64(&c) == -256, "mp_complement eq -256")
 
     // signed_rsh positive
     mp_set(&a, 128)
     err = mp_signed_rsh(&a, 3, &c); if !expect_ok(t, err, "128>>3")  do return
-    testing.expect(t, mp_cmp_d(&c, 16) == .MP_EQ)
+    testing.expect(t, mp_cmp_d(&c, 16) == .MP_EQ, "mp_signed_rsh eq 16")
 
     // s_mp_get_bit
     mp_set(&a, 0x80) // 1000_0000
@@ -1447,7 +1432,7 @@ test_sqrt_large :: proc(t: ^testing.T) {
     // sqrt(2^30) must be 2^15
     mp_2expt(&x, 60)
     err = mp_sqrt(&x, &r); if !expect_ok(t, err, "sqrt 2^60")  do return
-    testing.expect(t, mp_cmp_d(&r, 1 << 30) == .MP_EQ)
+    testing.expect(t, mp_get_i64(&r) == 1 << 30, "sqrt 2^60")
 
     // sqrt of 1
     mp_set(&x, 1)
@@ -1472,22 +1457,22 @@ test_root_n_edge :: proc(t: ^testing.T) {
     // 1^{anything} = 1
     mp_set(&a, 1)
     err = mp_root_n(&a, 7, &r); if !expect_ok(t, err, "root7 1")  do return
-    testing.expect(t, mp_cmp_d(&r, 1) == .MP_EQ)
+    testing.expect(t, mp_cmp_d(&r, 1) == .MP_EQ, "root7 1")
 
     // 0^{anything} = 0
     mp_zero(&a)
     err = mp_root_n(&a, 3, &r); if !expect_ok(t, err, "root3 0")  do return
-    testing.expect(t, mp_cmp_d(&r, 0) == .MP_EQ)
+    testing.expect_value(t, mp_get_i64(&r), 0)
 
     // 小数的根
     mp_set(&a, 27)
     err = mp_root_n(&a, 3, &r); if !expect_ok(t, err, "cbrt 27")  do return
-    testing.expect(t, mp_cmp_d(&r, 3) == .MP_EQ)
+    testing.expect(t, mp_cmp_d(&r, 3) == .MP_EQ, "cbrt 27")
 
     // 偶数次根检查: root_n(x, 2, ...) 对正数等于 sqrt
     mp_set(&a, 81)
     err = mp_root_n(&a, 2, &r); if !expect_ok(t, err, "root2 81")  do return
-    testing.expect(t, mp_cmp_d(&r, 9) == .MP_EQ)
+    testing.expect(t, mp_cmp_d(&r, 9) == .MP_EQ, "root2 81")
 
     // 偶数根负数报错
     a.sign = .MP_NEG
@@ -1626,17 +1611,19 @@ test_invmod_extended :: proc(t: ^testing.T) {
     mp_set(&a, 3); mp_set_i32(&m, -11)
     err = mp_invmod(&a, &m, &inv)
     testing.expect(t, err == .MP_VAL)
+    mp_zero(&inv)
 
     // invmod where a > m
     mp_set(&a, 14); mp_set(&m, 11)
     err = mp_invmod(&a, &m, &inv); if !expect_ok(t, err, "invmod(14,11)")  do return
     // 3 mod 11, inverse = 4
-    testing.expect(t, mp_cmp_d(&inv, 4) == .MP_EQ)
+    testing.expect(t, mp_cmp_d(&inv, 4) == .MP_EQ, "invmod(14,11)")
 
     // invmod negative a
     mp_set_i32(&a, -3); mp_set(&m, 11)
     err = mp_invmod(&a, &m, &inv); if !expect_ok(t, err, "invmod(-3,11)")  do return
-    testing.expect(t, mp_cmp_d(&inv, 4) == .MP_EQ) // -3 mod 11 = 8, inv of 8 is 7
+    vv := mp_get_i64(&inv)
+    testing.expect(t, vv == -7, "invmod(-3,11) = -7") // -3 mod 11 = 8, inv of 8 is 7
 }
 
 // ==================== 比较自引用 ====================

@@ -624,31 +624,41 @@ mp_cnt_lsb :: proc(a: ^mp_int) -> int {
 mp_mul :: proc(a: ^mp_int, b: ^mp_int, c: ^mp_int) -> mp_err {
     digs := a.used + b.used + 1
     neg := a.sign != b.sign
+    err := mp_err.MP_VAL
+
     if a == b {
         if a.used >= MP_SQR_TOOM_CUTOFF {
-            return s_mp_sqr_toom(a, c)
+            err = s_mp_sqr_toom(a, c)
         } else if a.used >= MP_SQR_KARATSUBA_CUTOFF {
-            return s_mp_sqr_karatsuba(a, c)
+            err = s_mp_sqr_karatsuba(a, c)
         } else if (a.used * 2 + 1) < int(1 << (size_of(mp_word) * 8 - 2 * DIGIT_BIT + 1)) &&
         a.used < int(1 << (size_of(mp_word) * 8 - 2 * DIGIT_BIT)) {
-            return s_mp_sqr_comba(a, c)
+            err = s_mp_sqr_comba(a, c)
+        } else {
+            err = s_mp_sqr(a, c)
         }
-        return s_mp_sqr(a, c)
+    } else {
+        min := min(a.used, b.used)  // a != b
+        max := max(a.used, b.used)
+        if min >= MP_MUL_KARATSUBA_CUTOFF && max / 2 >= MP_MUL_KARATSUBA_CUTOFF && max >= 2 * min {
+            err = s_mp_mul_balance(a, b, c)
+        } else if min >= MP_MUL_TOOM_CUTOFF {
+            err = s_mp_mul_toom(a, b, c)
+        } else if min >= MP_MUL_KARATSUBA_CUTOFF {
+            err = s_mp_mul_karatsuba(a, b, c)
+        } else if digs < int(1 << (size_of(mp_word) * 8 - 2 * DIGIT_BIT + 1)) &&
+        min <= int(1 << (size_of(mp_word) * 8 - 2 * DIGIT_BIT)) {
+            err = s_mp_mul_comba(a, b, c, digs)
+        } else {
+            err = s_mp_mul(a, b, c, digs)
+        }
     }
-    // a != b
-    min := min(a.used, b.used)
-    max := max(a.used, b.used)
-    if min >= MP_MUL_KARATSUBA_CUTOFF && max / 2 >= MP_MUL_KARATSUBA_CUTOFF && max >= 2 * min {
-        return s_mp_mul_balance(a, b, c)
-    } else if min >= MP_MUL_TOOM_CUTOFF {
-        return s_mp_mul_toom(a, b, c)
-    } else if min >= MP_MUL_KARATSUBA_CUTOFF {
-        return s_mp_mul_karatsuba(a, b, c)
-    } else if digs < int(1 << (size_of(mp_word) * 8 - 2 * DIGIT_BIT + 1)) &&
-    min <= int(1 << (size_of(mp_word) * 8 - 2 * DIGIT_BIT)) {
-        return s_mp_mul_comba(a, b, c, digs)
+    if c.used > 0 && neg {
+        c.sign = .MP_NEG
+    }  else {
+        c.sign = .MP_ZPOS
     }
-    return s_mp_mul(a, b, c, digs) // fallback
+    return err // fallback
 }
 
 @(private="file")
@@ -2148,6 +2158,7 @@ mp_clear_multi :: proc(mp: ..^mp_int) {
 // mp_fread and mp_fwrite are omitted; use Odin's string / buffer conversion instead.
 
 // --------------- Additional stubs for missing functions ---------------
+/****************************** not implemented **************************
 mp_kronecker :: proc(a: ^mp_int, p: ^mp_int, c: ^int) -> mp_err {
     return .MP_ERR
 } // not implemented
@@ -2190,6 +2201,7 @@ mp_reduce_setup :: proc(a: ^mp_int, b: ^mp_int) -> mp_err {
 mp_reduce :: proc(x: ^mp_int, m: ^mp_int, mu: ^mp_int) -> mp_err {
     return .MP_ERR
 }
+****************************** not implemented **************************/
 
 // --------------- s_mp_get_bit ---------------
 s_mp_get_bit :: proc(a: ^mp_int, b: int) -> bool {
