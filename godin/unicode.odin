@@ -161,7 +161,6 @@ utf8proc_iterate :: proc(str: []u8, strlen: int, dst: ^i32) -> int {
 
     uc := u32(str[0])
     str := str[1:]
-    p := &str[0]
     if uc < 0x80 {
         dst^ = i32(uc)
         return 1
@@ -169,6 +168,8 @@ utf8proc_iterate :: proc(str: []u8, strlen: int, dst: ^i32) -> int {
     if (uc - 0xc2) > (0xf4 - 0xc2) {
         return -3
     }
+
+    p := &str[0]
     if uc < 0xe0 {
         if p >= end_ptr || (p^ & 0xc0) != 0x80 {
             return -3
@@ -391,7 +392,7 @@ last_boundclass: ^i32,
     }
     codepoint :i32
     for idx := 0; idx <= len_; idx += 1 {
-        _, codepoint = seqindex_decode_entry(seqindex)
+        seqindex, codepoint = seqindex_decode_entry(seqindex)
         n := utf8proc_decompose_char(codepoint, dst[written:], max(0, bufsize - written), options, last_boundclass)
         if n < 0 {
             return -2
