@@ -1,9 +1,9 @@
 // gb_test.odin
 package godin
 
-import "core:testing"
 import "core:os"
 import "core:strings"
+import "core:testing"
 
 // -----------------------------------------------------------------------------
 // gb_is_power_of_two
@@ -153,18 +153,18 @@ test_utf8_to_ucs2 :: proc(t: ^testing.T) {
     buf: [32]u16
 
     // plain ASCII
-    result := gb_utf8_to_ucs2(buf[:], "Hello")
+	_, result := gb_utf8_to_ucs2_s(buf[:], len(buf), "Hello")
     expected: []u16 = {'H','e','l','l','o', 0}
     testing.expect(t, result[0] == expected[0] && result[1] == expected[1], "ascii")
 
     // two-byte char (U+00E9 é)
     buf2: [32]u16
-    result2 := gb_utf8_to_ucs2(buf2[:], "é")
+	_, result2 := gb_utf8_to_ucs2_s(buf2[:], len(buf2), "é")
     testing.expect(t, len(result2) >= 1 && result2[0] == 0x00E9, "é U+00E9")
 
     // surrogate pair (U+1F600 😀)
     buf3: [32]u16
-    result3 := gb_utf8_to_ucs2(buf3[:], "😀")
+	_, result3 := gb_utf8_to_ucs2_s(buf3[:], len(buf3), "😀")
     // high surrogate 0xD83D, low 0xDE00
     testing.expect(t, len(result3) >= 2, "emoji length")
     testing.expect(t, result3[0] == 0xD83D && result3[1] == 0xDE00, "emoji surrogate pair")
@@ -174,13 +174,14 @@ test_utf8_to_ucs2 :: proc(t: ^testing.T) {
 test_ucs2_to_utf8 :: proc(t: ^testing.T) {
     buf: [32]byte
     src: []u16 = {'H','i',0}
-    result := gb_ucs2_to_utf8(buf[:], src)
+    _, result := gb_ucs2_to_utf8(buf[:], len(buf), src)
+	testing.expect_value(t, len(result), 2)
     testing.expect_value(t, string(result), "Hi")
 
     // emoji surrogate
     src2: []u16 = {0xD83D, 0xDE00, 0} // 😀
     buf2: [32]byte
-    result2 := gb_ucs2_to_utf8(buf2[:], src2)
+	_, result2 := gb_ucs2_to_utf8(buf2[:], len(buf2), src2)
     testing.expect_value(t, len(result2), 4)
     testing.expect_value(t, string(result2), "😀")
 }
@@ -229,7 +230,7 @@ test_env :: proc(t: ^testing.T) {
     defer os.unset_env(test_key)
 
     gb_set_env(test_key, "odin_rocks")
-    val := gb_get_env(test_key)
+    val := gb_get_env(test_key); defer delete(val)
     // The returned string may be a copy; compare
     testing.expect(t, strings.compare(val, "odin_rocks") == 0, "env value matches")
 
