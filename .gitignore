@@ -341,3 +341,6 @@ phpsdk_setshell.bat
 *.i2.c
 *.i2.h
 godin/cmd/cmd.7z
+godin/cmd/godin.7z
+godin/cmd/vendor.7z
+godin/godin.zip
