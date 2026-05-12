@@ -1,3 +1,4 @@
+#+feature global-context
 package godin
 
 import "base:runtime"
@@ -7,14 +8,14 @@ import "core:os"
 import "core:slice"
 import "core:sort"
 import "core:strings"
-import "core:sync/mutex"
+import "core:sync"
 import "core:unicode"
 import "core:path/filepath"
 
-// ============================================================================
-// Block 1: Basic Utilities
+
+//region --- Basic Utilities ---
+
 // Translated from src/common.cpp
-// ============================================================================
 
 // --- heap_allocator ---
 
@@ -23,6 +24,18 @@ heap_allocator :: proc() -> runtime.Allocator {
 }
 
 // --- next_pow2 / prev_pow2 ---
+next_pow2 :: proc{
+	next_pow2_i32,
+	next_pow2_i64,
+	next_pow2_int,
+	next_pow2_u32,
+}
+
+prev_pow2 :: proc{
+	prev_pow2_u32,
+	prev_pow2_i32,
+	prev_pow2_i64,
+}
 
 next_pow2_i32 :: proc(n: i32) -> i32 {
 	if n <= 0 do return 0
@@ -60,13 +73,14 @@ prev_pow2_u32 :: proc(n: u32) -> u32 {
 
 prev_pow2_i32 :: proc(n: i32) -> i32 {
 	if n <= 0 do return 0
-	return cast(i32)(cast(u32)next_pow2_i32(n) >> 1)
+	return i32((u32)(next_pow2_i32(n)) >> 1)
 }
 
 prev_pow2_i64 :: proc(n: i64) -> i64 {
 	if n <= 0 do return 0
-	return cast(i64)(cast(u64)next_pow2_i64(n) >> 1)
+	return i64((u64)(next_pow2_i64(n)) >> 1)
 }
+
 
 // --- Type trait helpers (approximate C++ template metaprogramming) ---
 
@@ -151,6 +165,11 @@ u64_digit_value :: proc(r: rune) -> (u64, bool) {
 	return 0, false
 }
 
+u64_from_string_v :: proc(s: string) -> u64 {
+	v, _ := u64_from_string(s)
+	return v
+}
+
 u64_from_string :: proc(s: string) -> (u64, bool) {
 	if len(s) == 0 do return 0, false
 	str := s
@@ -180,7 +199,7 @@ u64_from_string :: proc(s: string) -> (u64, bool) {
 
 // --- u64_to_string and i64_to_string ---
 
-NUM_TO_CHAR_TABLE :: [16]byte{'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'}
+NUM_TO_CHAR_TABLE := [16]byte{'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'}
 
 u64_to_string :: proc(value: u64, buf: []byte) -> string {
 	if len(buf) == 0 do return ""
@@ -203,8 +222,12 @@ i64_to_string :: proc(value: i64, buf: []byte) -> string {
 	if value >= 0 do return u64_to_string(cast(u64)value, buf)
 	u := cast(u64)(-value)
 	s := u64_to_string(u, buf[1:])
-	buf[0] = '-'
-	return string(buf[:len(s) + 1])
+	i := len(buf) - len(s) - 1
+	if i <= 0 do return ""
+	buf[i] = '-'
+	buf2 := buf[i:i + len(s) + 1]
+	s = string(buf2)
+	return s
 }
 
 // --- Integer min/max compile-time constants ---
@@ -346,24 +369,24 @@ gb_sqrt :: proc(x: f64) -> f64 {
 // global_module_path — skipped (application-specific globals)
 // debugf — skipped (declaration only in original, no body)
 
+//endregion
 
-// ============================================================================
-// Block 2: Array/Slice wrappers + Queue implementations
+//region --- Array/Slice wrappers + Queue implementations ---
+
 // Translated from src/array.cpp and src/queue.cpp
-// ============================================================================
 
 // --- Array wrappers over [dynamic]T ---
 // Thin wrappers around Odin's built-in [dynamic]T to match C++ Array<T> API.
 
-array_init :: proc(a: ^[dynamic]T, allocator := context.allocator) {
+array_init :: proc($T: typeid, a: ^[dynamic]T, allocator := context.allocator) {
 	a^ = make([dynamic]T, allocator)
 }
 
-array_init_with_count :: proc(a: ^[dynamic]T, count: int, allocator := context.allocator) {
+array_init_with_count :: proc($T: typeid, a: ^[dynamic]T, count: int, allocator := context.allocator) {
 	a^ = make([dynamic]T, count, allocator)
 }
 
-array_init_with_capacity :: proc(a: ^[dynamic]T, count, capacity: int, allocator := context.allocator) {
+array_init_with_capacity :: proc($T: typeid, a: ^[dynamic]T, count, capacity: int, allocator := context.allocator) {
 	a^ = make([dynamic]T, count, capacity, allocator)
 }
 
@@ -379,31 +402,31 @@ array_make_with_capacity :: proc($T: typeid, count, capacity: int, allocator := 
 	return make([dynamic]T, count, capacity, allocator)
 }
 
-array_free :: proc(a: ^[dynamic]T) {
+array_free :: proc($T: typeid, a: ^[dynamic]T) {
 	delete(a^)
 }
 
-array_add :: proc(a: ^[dynamic]T, item: T) {
+array_add :: proc($T: typeid, a: ^[dynamic]T, item: T) {
 	append(a, item)
 }
 
-array_add_and_get :: proc(a: ^[dynamic]T) -> ^T {
+array_add_and_get :: proc($T: typeid, a: ^[dynamic]T) -> ^T {
 	n := len(a)
 	append(a, T{})
 	return &a[n]
 }
 
-array_add_elems :: proc(a: ^[dynamic]T, elems: []T) {
+array_add_elems :: proc($T: typeid, a: ^[dynamic]T, elems: []T) {
 	append(a, ..elems)
 }
 
-array_pop :: proc(a: ^[dynamic]T) -> T {
+array_pop :: proc($T: typeid, a: ^[dynamic]T) -> T {
 	val := a[len(a)-1]
 	resize(a, len(a)-1)
 	return val
 }
 
-array_pop_safe :: proc(a: ^[dynamic]T) -> (T, bool) {
+array_pop_safe :: proc($T: typeid, a: ^[dynamic]T) -> (T, bool) {
 	n := len(a)
 	if n == 0 do return T{}, false
 	val := a[n-1]
@@ -411,33 +434,33 @@ array_pop_safe :: proc(a: ^[dynamic]T) -> (T, bool) {
 	return val, true
 }
 
-array_clear :: proc(a: ^[dynamic]T) {
+array_clear :: proc($T: typeid, a: ^[dynamic]T) {
 	clear(a)
 }
 
-array_reserve :: proc(a: ^[dynamic]T, capacity: int) {
+array_reserve :: proc($T: typeid, a: ^[dynamic]T, capacity: int) {
 	reserve(a, capacity)
 }
 
-array_resize :: proc(a: ^[dynamic]T, count: int) {
+array_resize :: proc($T: typeid, a: ^[dynamic]T, count: int) {
 	resize(a, count)
 }
 
-array_slice :: proc(a: [dynamic]T, lo, hi: int) -> []T {
+array_slice :: proc($T: typeid, a: [dynamic]T, lo, hi: int) -> []T {
 	return a[lo:hi]
 }
 
-array_clone :: proc(a: [dynamic]T, allocator := context.allocator) -> [dynamic]T {
+array_clone :: proc($T: typeid, a: [dynamic]T, allocator := context.allocator) -> [dynamic]T {
 	res := make([dynamic]T, len(a), cap(a), allocator)
 	append(&res, ..a[:])
 	return res
 }
 
-array_ordered_remove :: proc(a: ^[dynamic]T, index: int) {
+array_ordered_remove :: proc($T: typeid, a: ^[dynamic]T, index: int) {
 	ordered_remove(a, index)
 }
 
-array_unordered_remove :: proc(a: ^[dynamic]T, index: int) {
+array_unordered_remove :: proc($T: typeid, a: ^[dynamic]T, index: int) {
 	unordered_remove(a, index)
 }
 
@@ -447,7 +470,7 @@ array_copy :: proc{
 	array_copy_with_offset_and_count,
 }
 
-array_copy_with_offset :: proc(a: ^[dynamic]T, data: [dynamic]T, offset: int) {
+array_copy_with_offset :: proc($T: typeid, a: ^[dynamic]T, data: [dynamic]T, offset: int) {
 	if offset < 0 do return
 	n := len(data)
 	for i in 0..<n {
@@ -456,7 +479,7 @@ array_copy_with_offset :: proc(a: ^[dynamic]T, data: [dynamic]T, offset: int) {
 	}
 }
 
-array_copy_with_offset_and_count :: proc(a: ^[dynamic]T, data: [dynamic]T, offset, count: int) {
+array_copy_with_offset_and_count :: proc($T: typeid, a: ^[dynamic]T, data: [dynamic]T, offset, count: int) {
 	if offset < 0 || count <= 0 do return
 	for i in 0..<count {
 		if offset + i >= len(a) || i >= len(data) do break
@@ -464,22 +487,22 @@ array_copy_with_offset_and_count :: proc(a: ^[dynamic]T, data: [dynamic]T, offse
 	}
 }
 
-array_end_ptr :: proc(a: ^[dynamic]T) -> ^T {
+array_end_ptr :: proc($T: typeid, a: ^[dynamic]T) -> ^T {
 	if len(a) == 0 do return nil
 	return &a[len(a)-1]
 }
 
-array_sort :: proc(a: ^[dynamic]T, cmp: proc(a, b: T) -> int) {
+array_sort :: proc($T: typeid, a: ^[dynamic]T, cmp: proc(a, b: T) -> int) {
 	slice.sort_by(a[:], cmp)
 }
 
 // --- Slice wrappers over []T ---
 
-slice_from_array :: proc(a: [dynamic]T) -> []T {
+slice_from_array :: proc($T: typeid, a: [dynamic]T) -> []T {
 	return a[:]
 }
 
-slice_array :: proc(a: [dynamic]T, lo, hi: int) -> []T {
+slice_array :: proc($T: typeid, a: [dynamic]T, lo, hi: int) -> []T {
 	return a[lo:hi]
 }
 
@@ -487,13 +510,13 @@ slice_make :: proc($T: typeid, count: int, allocator := context.allocator) -> []
 	return make([]T, count, allocator)
 }
 
-slice_clone :: proc(s: []T, allocator := context.allocator) -> []T {
+slice_clone :: proc($T: typeid, s: []T, allocator := context.allocator) -> []T {
 	res := make([]T, len(s), allocator)
 	copy(res, s)
 	return res
 }
 
-slice_clone_from_array :: proc(a: [dynamic]T, allocator := context.allocator) -> []T {
+slice_clone_from_array :: proc($T: typeid, a: [dynamic]T, allocator := context.allocator) -> []T {
 	res := make([]T, len(a), allocator)
 	copy(res, a[:])
 	return res
@@ -506,32 +529,32 @@ slice_copy :: proc{
 	slice_copy_with_offset_and_count,
 }
 
-slice_copy_simple :: proc(dst: ^[]T, src: []T) {
+slice_copy_simple :: proc($T: typeid, dst: ^[]T, src: []T) {
 	copy(dst^, src)
 }
 
-slice_copy_with_offset :: proc(dst: ^[]T, src: []T, offset: int) {
+slice_copy_with_offset :: proc($T: typeid, dst: ^[]T, src: []T, offset: int) {
 	if offset < 0 || offset >= len(dst) do return
 	n := min(len(src), len(dst) - offset)
 	copy((dst^)[offset:], src[:n])
 }
 
-slice_copy_with_offset_and_count :: proc(dst: ^[]T, src: []T, offset, count: int) {
+slice_copy_with_offset_and_count :: proc($T: typeid, dst: ^[]T, src: []T, offset, count: int) {
 	if offset < 0 || count <= 0 || offset >= len(dst) do return
 	n := min(count, min(len(src), len(dst) - offset))
 	copy((dst^)[offset:], src[:n])
 }
 
-slice_ordered_remove :: proc(s: ^[]T, index: int) {
+slice_ordered_remove :: proc($T: typeid, s: ^[]T, index: int) {
 	n := len(s)
 	if index < 0 || index >= n do return
 	if index < n-1 {
-		mem.move(&s[index], &s[index+1], (n - index - 1) * size_of(T))
+		mem.copy(&s[index], &s[index+1], (n - index - 1) * size_of(T))
 	}
 	s^ = s^[:n-1]
 }
 
-slice_unordered_remove :: proc(s: ^[]T, index: int) {
+slice_unordered_remove :: proc($T: typeid, s: ^[]T, index: int) {
 	n := len(s)
 	if index < 0 || index >= n do return
 	s[index] = s[n-1]
@@ -545,7 +568,7 @@ slice_unordered_remove :: proc(s: ^[]T, index: int) {
 // MPSCQueue — Multi-Producer Single-Consumer (simplified)
 
 MPSCQueue :: struct($T: typeid) {
-	mutex: mutex.Mutex,
+	mutex: sync.Mutex,
 	items: [dynamic]T,
 }
 
@@ -558,15 +581,15 @@ mpsc_destroy :: proc(q: ^MPSCQueue($T)) {
 }
 
 mpsc_enqueue :: proc(q: ^MPSCQueue($T), value: T) -> int {
-	mutex.lock(&q.mutex)
+	sync.mutex_lock(&q.mutex)
+	defer sync.mutex_unlock(&q.mutex)
 	append(&q.items, value)
-	mutex.unlock(&q.mutex)
 	return 0
 }
 
 mpsc_dequeue :: proc(q: ^MPSCQueue($T)) -> (T, bool) {
-	mutex.lock(&q.mutex)
-	defer mutex.unlock(&q.mutex)
+	sync.mutex_lock(&q.mutex)
+	defer sync.mutex_unlock(&q.mutex)
 	if len(q.items) == 0 do return T{}, false
 	val := q.items[0]
 	ordered_remove(&q.items, 0)
@@ -576,7 +599,7 @@ mpsc_dequeue :: proc(q: ^MPSCQueue($T)) -> (T, bool) {
 // MPMCQueue — Multi-Producer Multi-Consumer (simplified, bounded)
 
 MPMCQueue :: struct($T: typeid) {
-	mutex: mutex.Mutex,
+	mutex: sync.Mutex,
 	buf:   []T,
 	head:  int,
 	tail:  int,
@@ -596,8 +619,8 @@ mpmc_destroy :: proc(q: ^MPMCQueue($T)) {
 }
 
 mpmc_enqueue :: proc(q: ^MPMCQueue($T), data: T) -> i32 {
-	mutex.lock(&q.mutex)
-	defer mutex.unlock(&q.mutex)
+	sync.mutex_lock(&q.mutex)
+	defer sync.mutex_unlock(&q.mutex)
 	if q.count >= q.cap do return -1
 	q.buf[q.tail] = data
 	q.tail = (q.tail + 1) % q.cap
@@ -606,8 +629,8 @@ mpmc_enqueue :: proc(q: ^MPMCQueue($T), data: T) -> i32 {
 }
 
 mpmc_dequeue :: proc(q: ^MPMCQueue($T)) -> (T, bool) {
-	mutex.lock(&q.mutex)
-	defer mutex.unlock(&q.mutex)
+	sync.mutex_lock(&q.mutex)
+	defer sync.mutex_unlock(&q.mutex)
 	if q.count == 0 do return T{}, false
 	val := q.buf[q.head]
 	q.head = (q.head + 1) % q.cap
@@ -615,11 +638,11 @@ mpmc_dequeue :: proc(q: ^MPMCQueue($T)) -> (T, bool) {
 	return val, true
 }
 
+//endregion
 
-// ============================================================================
-// Block 3: Containers (RangeCache, PriorityQueue, StringInterner)
+//region --- Containers (RangeCache, PriorityQueue, StringInterner) ---
+
 // Translated from src/range_cache.cpp, src/priority_queue.cpp, src/string_interner.cpp
-// ============================================================================
 
 // --- RangeCache ---
 
@@ -640,46 +663,49 @@ range_cache_destroy :: proc(rc: ^RangeCache) {
 	delete(rc.ranges)
 	rc^ = {}
 }
-
-range_cache_add_index :: proc(rc: ^RangeCache, index: i64) {
-	for i in 0..<len(rc.ranges) {
-		r := &rc.ranges[i]
-		if index == r.lo - 1 {
-			r.lo = index
-			if i > 0 && rc.ranges[i-1].hi + 1 == r.lo {
-				rc.ranges[i-1].hi = r.hi
-				ordered_remove(&rc.ranges, i)
-			}
-			return
+range_cache_add_index :: proc(c: ^RangeCache, idx: i64) -> bool {
+	for _, i in c.ranges {
+		r := &c.ranges[i]
+		if r.lo - 1 == idx {
+			r.lo = idx
+			return true
 		}
-		if index == r.hi + 1 {
-			r.hi = index
-			if i + 1 < len(rc.ranges) && r.hi + 1 == rc.ranges[i+1].lo {
-				r.hi = rc.ranges[i+1].hi
-				ordered_remove(&rc.ranges, i + 1)
-			}
-			return
+		if r.hi + 1 == idx {
+			r.hi = idx
+			return true
 		}
-		if index >= r.lo && index <= r.hi do return
-		if index < r.lo - 1 {
-			inject_at(&rc.ranges, i, RangeValue{lo = index, hi = index})
-			return
+		if r.lo <= idx && idx <= r.hi {
+			return true
 		}
 	}
-	append(&rc.ranges, RangeValue{lo = index, hi = index})
+	append(&c.ranges, RangeValue{ lo = idx, hi = idx })
+	return false
 }
-
-range_cache_add_range :: proc(rc: ^RangeCache, lo, hi: i64) {
-	for index in lo..=hi {
-		range_cache_add_index(rc, index)
+range_cache_add_range :: proc(c: ^RangeCache, lo, hi: i64) -> bool {
+	if lo > hi do return false
+	for _, i in c.ranges {
+		r := &c.ranges[i]
+		if r.lo - 1 == hi {
+			r.lo = lo
+			return true
+		}
+		if r.hi + 1 == lo {
+			r.hi = hi
+			return true
+		}
+		if r.lo <= lo && hi <= r.hi {
+			return true
+		}
 	}
+	append(&c.ranges, RangeValue{ lo = lo, hi = hi })
+	return false
 }
 
 // --- PriorityQueue ---
 
 PriorityQueue :: struct($T: typeid) {
 	queue: [dynamic]T,
-	cmp:   proc(q: ^T, i, j: int) -> int,
+	cmp:   proc(a, b: T) -> int,
 	swap:  proc(q: ^T, i, j: int),
 }
 
@@ -695,7 +721,7 @@ priority_queue_swap :: proc(pq: ^$P/PriorityQueue($T), i, j: int) {
 
 @(private)
 priority_queue_cmp :: proc(pq: ^$P/PriorityQueue($T), i, j: int) -> int {
-	if pq.cmp != nil do return pq.cmp(&pq.queue[0], i, j)
+	if pq.cmp != nil do return pq.cmp(pq.queue[i], pq.queue[j])
 	return 0
 }
 
@@ -718,6 +744,7 @@ priority_queue_shift_down :: proc(pq: ^$P/PriorityQueue($T), i0: int, n: int) ->
 }
 
 priority_queue_shift_up :: proc(pq: ^$P/PriorityQueue($T), j: int) {
+	j := j
 	for j >= 0 && j < len(pq.queue) {
 		i := (j - 1) / 2
 		if i == j || priority_queue_cmp(pq, j, i) >= 0 do break
@@ -761,7 +788,7 @@ priority_queue_remove :: proc(pq: ^$P/PriorityQueue($T), i: int) -> bool {
 	return true
 }
 
-priority_queue_create :: proc(cmp: proc(q: ^$T, i, j: int) -> int, swap: proc(q: ^$T, i, j: int) = nil, allocator := context.allocator) -> PriorityQueue(T) {
+priority_queue_create :: proc($T: typeid, cmp: proc(a, b: T) -> int, swap: proc(q: ^T, i, j: int) = nil, allocator := context.allocator) -> PriorityQueue(T) {
 	return PriorityQueue(T){
 		queue = make([dynamic]T, allocator),
 		cmp   = cmp,
@@ -778,9 +805,7 @@ priority_queue_destroy :: proc(pq: ^$P/PriorityQueue($T)) {
 // NOTE: Simplified from the lock-free C++ version.
 // Uses a mutex-protected map[string]string for string interning.
 
-InternedString :: struct {
-	value: u32,
-}
+InternedString :: u32
 
 INTERN_CELL_CAP :: 8
 
@@ -792,7 +817,7 @@ StringInternCell :: struct {
 StringInterner :: struct {
 	entries:     map[string]u32, // string -> unique id
 	reverse:     [dynamic]string, // id -> string
-	mutex:       mutex.Mutex,
+	mutex:       sync.Mutex,
 	track_count: bool,
 	count:       i64,
 }
@@ -810,22 +835,23 @@ destroy_string_interner :: proc(si: ^StringInterner) {
 	si^ = {}
 }
 
-string_interner_load :: proc(si: ^StringInterner, s: string) -> InternedString {
-	return string_interner_insert(si, s)
+string_interner_load :: proc(si: ^StringInterner, interned: InternedString) -> string {
+	return string_interner_lookup(si, interned)
 }
 
-string_interner_load_cstring :: proc(si: ^StringInterner, s: string) -> InternedString {
-	return string_interner_insert(si, s)
+string_interner_load_cstring :: proc(si: ^StringInterner, interned: InternedString) -> cstring {
+	str := string_interner_lookup(si, interned)
+	return cstring(raw_data(str))
 }
 
 string_interner_insert :: proc(si: ^StringInterner, s: string) -> InternedString {
-	if len(s) == 0 do return InternedString{value = 0}
+	if len(s) == 0 do return 0
 
-	mutex.lock(&si.mutex)
-	defer mutex.unlock(&si.mutex)
+	sync.mutex_lock(&si.mutex)
+	defer sync.mutex_unlock(&si.mutex)
 
 	if id, found := si.entries[s]; found {
-		return InternedString{value = id}
+		return id
 	}
 
 	id := u32(len(si.reverse) + 1)
@@ -833,18 +859,18 @@ string_interner_insert :: proc(si: ^StringInterner, s: string) -> InternedString
 	append(&si.reverse, s)
 
 	if si.track_count do si.count += 1
-	return InternedString{value = id}
+	return id
 }
 
 string_interner_lookup :: proc(si: ^StringInterner, is: InternedString) -> string {
-	mutex.lock(&si.mutex)
-	defer mutex.unlock(&si.mutex)
-	if is.value == 0 || is.value > u32(len(si.reverse)) do return ""
-	return si.reverse[is.value - 1]
+	sync.mutex_lock(&si.mutex)
+	defer sync.mutex_unlock(&si.mutex)
+	if is == 0 || is > u32(len(si.reverse)) do return ""
+	return si.reverse[is - 1]
 }
 
-string_intern_cstring :: proc(si: ^StringInterner, s: string) -> InternedString {
-	return string_interner_insert(si, s)
+string_intern_cstring :: proc(si: ^StringInterner, s: cstring) -> InternedString {
+	return string_interner_insert(si, string(s))
 }
 
 string_intern_string :: proc(si: ^StringInterner, s: string) -> InternedString {
@@ -892,6 +918,7 @@ obfuscate_string :: proc(s: string, prefix: string) -> string {
 @(private)
 u64_to_hex :: proc(v: u64) -> string {
 	buf: [18]byte
+	v := v
 	i := len(buf)
 	if v == 0 {
 		i -= 1; buf[i] = '0'
@@ -904,16 +931,17 @@ u64_to_hex :: proc(v: u64) -> string {
 }
 
 obfuscate_i32 :: proc(v: i32) -> i32 {
+	v := v
 	x := cast(i32)fnv64a(transmute([]byte)mem.byte_slice(&v, size_of(v)))
 	if x < 0 do return 1 - x
 	return x
 }
 
+//endregion
 
-// ============================================================================
-// Block 4: Path utilities, File loading, Levenshtein, DidYouMean
+//region --- Path utilities, File loading, Levenshtein, DidYouMean ---
+
 // Translated from src/path.cpp
-// ============================================================================
 
 // --- Path utilities ---
 
@@ -941,11 +969,12 @@ directory_from_path :: proc(path: string) -> string {
 }
 
 get_working_directory :: proc(allocator := context.allocator) -> (string, bool) {
-	return os.get_current_directory(allocator)
+	path, err := os.get_working_directory(allocator)
+	return path, err == os.ERROR_NONE
 }
 
 set_working_directory :: proc(dir: string) -> bool {
-	return os.set_current_directory(dir) == os.ERROR_NONE
+	return os.set_working_directory(dir) == os.ERROR_NONE
 }
 
 path_is_directory :: proc(path: string) -> bool {
@@ -953,7 +982,8 @@ path_is_directory :: proc(path: string) -> bool {
 }
 
 path_to_full_path :: proc(path: string, allocator := context.allocator) -> (string, bool) {
-	return os.absolute_path(path, allocator)
+	path, err := os.get_absolute_path(path, allocator)
+	return path, err == os.ERROR_NONE
 }
 
 // --- Path struct ---
@@ -1018,22 +1048,24 @@ ReadDirectoryError :: enum {
 }
 
 read_directory :: proc(path: string, allocator := context.allocator) -> ([dynamic]FileInfo, ReadDirectoryError) {
-	entries, err := os.read_dir(path, allocator)
+	entries, err := os.read_directory_by_path(path, 1, allocator)
 	if err != os.ERROR_NONE {
 		switch err {
-		case os.ERROR_FILE_NOT_FOUND: return nil, .NotExists
-		case os.ERROR_PATH_NOT_FOUND: return nil, .InvalidPath
-		case os.ERROR_ACCESS_DENIED:  return nil, .Permission
+		case os.General_Error.Not_Exist: return nil, .NotExists
+		case os.General_Error.Invalid_Path: return nil, .InvalidPath
+		case os.Platform_Error.ACCESS_DENIED:  return nil, .Permission
 		case:                         return nil, .Unknown
 		}
 	}
 	result := make([dynamic]FileInfo, 0, len(entries), allocator)
 	for entry in entries {
+		fullpath, err := filepath.join({path, entry.name}, allocator)
+		if err != os.ERROR_NONE do return nil, .Unknown
 		append(&result, FileInfo{
 			name     = entry.name,
-			fullpath = filepath.join({path, entry.name}, allocator),
+			fullpath = fullpath,
 			size     = entry.size,
-			is_dir   = entry.is_dir,
+			is_dir   = entry.type == os.File_Type.Directory,
 		})
 	}
 	if len(result) == 0 do return result, .Empty
@@ -1071,25 +1103,28 @@ LoadedFileError :: enum {
 // Original C++ used memory-mapped files (MapViewOfFile).
 
 load_file :: proc(path: string, allocator := context.allocator) -> (LoadedFile, LoadedFileError) {
-	data, ok := os.read_entire_file(path, allocator)
-	if !ok {
+	data, err := os.read_entire_file(path, allocator)
+	if err != os.ERROR_NONE {
 		if !os.is_file(path) do return LoadedFile{}, .NotExists
 		return LoadedFile{}, .Invalid
 	}
 	if len(data) == 0 do return LoadedFile{}, .Empty
-	max_i32: i64 = max(i32)
+	max_i32: i64 = i64(I32_MAX)
 	if cast(i64)len(data) > max_i32 do return LoadedFile{}, .FileTooLarge
 	return LoadedFile{data = raw_data(data), size = cast(i32)len(data)}, .None
 }
 
 loaded_file_free :: proc(lf: ^LoadedFile, allocator := context.allocator) {
+	_ = allocator
 	if lf.data != nil && lf.size > 0 {
-		delete(cast([^]byte)lf.data[:lf.size], allocator)
+		delete(cstring(([^]u8)(lf.data)), allocator)
 	}
 	lf.data = nil; lf.size = 0; lf.handle = nil
 }
 
-// --- Levenshtein distance ---
+//endregion
+
+//region --- Levenshtein distance ---
 
 levenstein_distance_case_insensitive :: proc(a, b: string) -> int {
 	a_runes := make([]rune, len(a), context.temp_allocator)
@@ -1131,9 +1166,9 @@ DidYouMeanAnswers :: struct {
 	key:       string,
 }
 
-did_you_mean_make :: proc(key: string, allocator := context.allocator) -> DidYouMeanAnswers {
+did_you_mean_make :: proc(key: string, cap:= 32, allocator := context.allocator) -> DidYouMeanAnswers {
 	return DidYouMeanAnswers{
-		distances = make([dynamic]DistanceAndTarget, allocator),
+		distances = make([dynamic]DistanceAndTarget, 0, cap, allocator),
 		key = key,
 	}
 }
@@ -1150,8 +1185,10 @@ did_you_mean_append :: proc(dym: ^DidYouMeanAnswers, target: string) {
 
 did_you_mean_results :: proc(dym: ^DidYouMeanAnswers) -> []DistanceAndTarget {
 	if len(dym.distances) == 0 do return nil
-	sort.quick_sort(dym.distances[:], proc(i, j: DistanceAndTarget) -> bool {
-		return i.distance < j.distance
+	sort.quick_sort_proc(dym.distances[:], proc(i, j: DistanceAndTarget) -> int {
+		if i.distance == j.distance do return 0
+		if i.distance > j.distance do return 1
+		return -1
 	})
 	smallest := dym.distances[0].distance
 	limit := smallest + MAX_SMALLEST_DID_YOU_MEAN_DISTANCE
@@ -1162,7 +1199,10 @@ did_you_mean_results :: proc(dym: ^DidYouMeanAnswers) -> []DistanceAndTarget {
 	return dym.distances[:count]
 }
 
-// --- Command-line parsing ---
+//endregion
+
+//region --- Command-line parsing ---
+
 // Simplified Windows CommandLineToArgvW-style parsing.
 
 command_line_to_wargv :: proc(cmd_line: string, allocator := context.allocator) -> []string {
@@ -1207,3 +1247,17 @@ command_line_to_wargv :: proc(cmd_line: string, allocator := context.allocator) 
 	}
 	return args[:]
 }
+
+//endregion
+
+// ==============================================
+// Global initialization
+// ==============================================
+@(init)
+init_common :: proc() {
+	init_string_interner(&g_interner)
+	g_interned_blank = string_interner_insert(&g_interner, "_")
+}
+
+g_interner: StringInterner
+g_interned_blank: InternedString

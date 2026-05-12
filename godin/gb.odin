@@ -13,6 +13,7 @@ import "core:time"
 //	--- type aliases to match original gb library ---
 b32 :: bool
 isize :: int
+usize :: uint
 Rune :: rune
 
 //	--- Assert handler ---
@@ -431,7 +432,7 @@ gb_str_to_upper :: proc(str: cstring) {
 
 //	--- Internal number-to-char table ---
 @(private)
-NUM_TO_CHAR_TABLE := "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz@$"
+GB_NUM_TO_CHAR_TABLE := "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz@$"
 
 //	--- Internal scan helpers ---
 @(private)
@@ -607,7 +608,7 @@ gb_i64_to_str :: proc(value: i64, str: cstring, base: i32) {
 	}
 	if v != 0 {
 		for v > 0 {
-			buf[0] = u8(NUM_TO_CHAR_TABLE[v % u64(base)])
+			buf[0] = u8(GB_NUM_TO_CHAR_TABLE[v % u64(base)])
 			buf = mem.ptr_offset(buf, 1)
 			v /= u64(base)
 		}
@@ -628,7 +629,7 @@ gb_u64_to_str :: proc(value: u64, str: cstring, base: i32) {
 	v := value
 	if v != 0 {
 		for v > 0 {
-			buf[0] = u8(NUM_TO_CHAR_TABLE[v % u64(base)])
+			buf[0] = u8(GB_NUM_TO_CHAR_TABLE[v % u64(base)])
 			buf = mem.ptr_offset(buf, 1)
 			v /= u64(base)
 		}
