@@ -177,337 +177,408 @@ import os
 import re
 import sys
 import json
-
+from StringIO import StringIO
+from contextlib import closing
 
 def _LOG(msg, handle=None):
-    print(msg, file=sys.stderr)
-    if handle:
-        handle.write(msg + '\n')
-        handle.flush()
+	print(msg, file=sys.stderr)
+	if handle:
+		handle.write(msg + '\n')
+		handle.flush()
 
 
 def fix_and_get_lines(in_file, tmp_file):
-    if os.path.isfile(tmp_file):
-        with open(tmp_file, 'r') as rf:
-            text = rf.read()
-    else:
-        with open(in_file, 'r') as rf:
-            text = rf.read()
+	if os.path.isfile(tmp_file):
+		with open(tmp_file, 'r') as rf:
+			text = rf.read()
+	else:
+		with open(in_file, 'r') as rf:
+			text = rf.read()
 
-        text = text.replace('\x0c', '\n').replace('\r\n', '\n').replace('\r', '\n')
-        text = re.sub(r'[ \t\x0c]+$', '', text, flags=re.MULTILINE)
-        text = re.sub(r'\n{2,}', '\n', text).strip('\n')
-        text = re.sub(r'^[ \t]+(#line.*?)$', r'\1', text, flags=re.MULTILINE)
+		text = text.replace('\x0c', '\n').replace('\r\n', '\n').replace('\r', '\n')
+		text = re.sub(r'[ \t\x0c]+$', '', text, flags=re.MULTILINE)
+		text = re.sub(r'\n{2,}', '\n', text).strip('\n')
+		text = re.sub(r'^[ \t]+(#line.*?)$', r'\1', text, flags=re.MULTILINE)
 
-        with open(tmp_file, 'w') as wf:
-            wf.write(text)
+		with open(tmp_file, 'w') as wf:
+			wf.write(text)
 
-    lines = text.split('\n')
-    ## prefix = [i for i in lines if '#line' in i and i != i.lstrip()]
-    ## last = [i for i in lines if i != i.rstrip()]
-    return lines
-
-
-def dump_cleaned_cpp(in_file, out_file, lines):
-    include = [
-        '<windows.h>', '<string.h>', '<wchar.h>', '<psapi.h>',
-        '<stdio.h>', '<math.h>', '<intrin.h>', '<atomic>', '<stdlib.h>',
-        'gb/gb.h', 'utf8proc/utf8proc.c', 'ucg/ucg.c',
-        'llvm-c/DataTypes.h',
-        'llvm-c/ExternC.h',
-        'llvm-c/Types.h',
-        'llvm-c/Core.h',
-        'llvm-c/ExecutionEngine.h',
-        'llvm-c/Analysis.h',
-        'llvm-c/Object.h',
-        'llvm-c/BitWriter.h',
-        'llvm-c/DebugInfo.h',
-        'llvm-c/Transforms/PassBuilder.h', ] if 'main.' in in_file else [
-        '<stddef.h>', '<stdint.h>', '<stdbool.h>', '<stdio.h>', '<limits.h>', '<stdarg.h>'
-    ]
-    include = [i for i in include if i.startswith('<')]
-
-    with open(out_file, 'w') as wf:
-        wf.write("/* auto gen by ipp from %s */\n" % (os.path.basename(in_file),))
-        wf.write("\n")
-        [wf.write("#include " + ("%s\n" if i.startswith('<') else '"%s"\n') % (i,)) for i in include]
-
-        wf.write("\n")
-        wf.writelines(lines)
+	lines = text.split('\n')
+	## prefix = [i for i in lines if '#line' in i and i != i.lstrip()]
+	## last = [i for i in lines if i != i.rstrip()]
+	return lines
 
 
-def dump_cleaned_part_cpp(in_file, out_file, lines):
-    with open(out_file, 'w') as wf:
-        wf.write("/* auto gen by ipp %s part of %s */\n" %
-                 (os.path.basename(out_file), os.path.basename(in_file)))
-        wf.write("\n")
-        wf.writelines(lines)
+def _listdir(str_dir, filter_func, skips):
+	all_files, current_files = {}, os.listdir(str_dir)
+	for file_name in current_files:
+		if file_name == '.' or file_name == '..':
+			continue
+		full_name = os.path.join(str_dir, file_name)
+		if os.path.isfile(full_name):
+			if filter_func(full_name, file_name):
+				all_files.setdefault(full_name, file_name)
+		elif os.path.isdir(full_name) and file_name not in skips \
+				and not file_name.startswith('.') and not file_name.startswith('$'):
+			next_files = _listdir(full_name, filter_func, skips)
+			for n_full_name, n_file_name in next_files.items():
+				all_files.setdefault(n_full_name, n_file_name)
+
+	return all_files
+
+
+def list_dir_by_name(str_dir, filter_func=None, encoding=None, skips=None):
+	skips = {'System Volume Information', '$RECYCLE.BIN'} if skips is None else skips
+	_str_dir = str_dir.encode(encoding, 'ignore') if isinstance(str_dir, unicode) and encoding else str_dir
+
+	if not os.path.isdir(_str_dir):
+		return {}
+
+	filter_func = filter_func if hasattr(filter_func, '__call__') else lambda f, n: True
+	all_files, name_files, _all_files = {}, {}, _listdir(_str_dir, filter_func, skips)
+	for n_full_name, n_file_name in _all_files.items():
+		stat = os.stat(n_full_name)
+		_full_name = n_full_name.decode(encoding) if encoding else n_full_name
+		_file_name = n_file_name.decode(encoding) if encoding else n_file_name
+		all_files[_full_name] = [_file_name, stat]
+		name_files[_file_name] = [_full_name, stat]
+	return all_files, name_files
+
+
+def dump_cleaned_cpp(in_file, out_file, lines, name_files=None):
+	include = [
+		'<windows.h>', '<string.h>', '<wchar.h>', '<psapi.h>',
+		'<stdio.h>', '<math.h>', '<intrin.h>', '<atomic>', '<stdlib.h>',
+		'gb/gb.h', 'utf8proc/utf8proc.c', 'ucg/ucg.c',
+		'llvm-c/DataTypes.h',
+		'llvm-c/ExternC.h',
+		'llvm-c/Types.h',
+		'llvm-c/Core.h',
+		'llvm-c/ExecutionEngine.h',
+		'llvm-c/Analysis.h',
+		'llvm-c/Object.h',
+		'llvm-c/BitWriter.h',
+		'llvm-c/DebugInfo.h',
+		'llvm-c/Transforms/PassBuilder.h', ] if 'main.' in in_file else [
+		'<stddef.h>', '<stdint.h>', '<stdbool.h>', '<stdio.h>', '<limits.h>', '<stdarg.h>'
+	]
+	include = [i for i in include if i.startswith('<')]
+
+	content, f_name = '', os.path.basename(out_file)
+	with closing(StringIO()) as wf:
+		wf.write("/* auto gen by ipp from %s */\n" % (os.path.basename(in_file),))
+		wf.write("\n")
+		[wf.write("#include " + ("%s\n" if i.startswith('<') else '"%s"\n') % (i,)) for i in include]
+
+		wf.write("\n")
+		wf.writelines(lines)
+		content = wf.getvalue()
+
+	if content and name_files and f_name in name_files and isinstance(name_files[f_name], (tuple, list)):
+		s_size, f_size = len(content) + (content.count('\n') if os.name.startswith('nt') else 0), \
+			name_files[f_name][1].st_size if name_files[f_name][1] else 0
+		if f_size == s_size:
+			return
+
+	with open(out_file, 'w') as wf:
+		wf.write("/* auto gen by ipp from %s */\n" % (os.path.basename(in_file),))
+		wf.write("\n")
+		[wf.write("#include " + ("%s\n" if i.startswith('<') else '"%s"\n') % (i,)) for i in include]
+
+		wf.write("\n")
+		wf.writelines(lines)
+
+
+def dump_cleaned_part_cpp(in_file, out_file, lines, name_files=None):
+	content, f_name = '', os.path.basename(out_file)
+	with closing(StringIO()) as wf:
+		wf.write("/* auto gen by ipp %s part of %s */\n" %
+				 (os.path.basename(out_file), os.path.basename(in_file)))
+		wf.write("\n")
+		wf.writelines(lines)
+		content = wf.getvalue()
+
+	if content and name_files and f_name in name_files and isinstance(name_files[f_name], (tuple, list)):
+		s_size, f_size = len(content) + (content.count('\n') if os.name.startswith('nt') else 0), \
+			name_files[f_name][1].st_size if name_files[f_name][1] else 0
+		if f_size == s_size:
+			return
+
+	with open(out_file, 'w') as wf:
+		wf.write("/* auto gen by ipp %s part of %s */\n" %
+				 (os.path.basename(out_file), os.path.basename(in_file)))
+		wf.write("\n")
+		wf.writelines(lines)
 
 
 def _out_name(s):
-    s = os.path.basename(s)
-    if s.endswith('.i'):
-        s = s.replace('.i', '.i.cpp')
-    elif s.endswith('.c'):
-        s = s.replace('.c', '.i.c')
-    elif s.endswith('.h'):
-        s = s.replace('.h', '.i.h')
-    else:
-        s = s.replace('.cpp', '.i.cpp').replace('.hpp', '.i.hpp')
-    return s
+	s = os.path.basename(s)
+	if s.endswith('.i'):
+		s = s.replace('.i', '.i.cpp')
+	elif s.endswith('.c'):
+		s = s.replace('.c', '.i.c')
+	elif s.endswith('.h'):
+		s = s.replace('.h', '.i.h')
+	else:
+		s = s.replace('.cpp', '.i.cpp').replace('.hpp', '.i.hpp')
+	return s
 
 
 def clean_ipp(base, in_file, out_file=None, out_folder='cipp'):
-    out_dir = os.path.join(os.path.dirname(os.path.abspath(in_file)), out_folder)
-    in_file = os.path.abspath(in_file) if os.path.isfile(in_file) else os.path.join(base, in_file)
-    out_file = str(out_file) if out_file else os.path.join(out_dir, _out_name(in_file))
+	out_dir = os.path.join(os.path.dirname(os.path.abspath(in_file)), out_folder)
+	in_file = os.path.abspath(in_file) if os.path.isfile(in_file) else os.path.join(base, in_file)
+	out_file = str(out_file) if out_file else os.path.join(out_dir, _out_name(in_file))
 
-    if not os.path.isfile(in_file): raise ValueError("file not found: " + in_file)
-    if not os.path.isdir(out_dir): os.mkdir(out_dir)
+	if not os.path.isfile(in_file): raise ValueError("file not found: " + in_file)
+	if not os.path.isdir(out_dir): os.mkdir(out_dir)
 
-    base_pre = (base + '/').replace('\\', r'\\').replace('/', r'\\')
-    src_pre = (base.rstrip('/').rstrip('\\') + '/src') \
-        .replace('\\', r'\\').replace('/', r'\\').split(r':\\', 1)[-1]
-    file_pre = in_file.replace('.i', '.cpp') \
-        .replace('\\', r'\\').replace('/', r'\\').split(r':\\', 1)[-1]
+	base_pre = (base + '/').replace('\\', r'\\').replace('/', r'\\')
+	src_pre = (base.rstrip('/').rstrip('\\') + '/src') \
+		.replace('\\', r'\\').replace('/', r'\\').split(r':\\', 1)[-1]
+	file_pre = in_file.replace('.i', '.cpp') \
+		.replace('\\', r'\\').replace('/', r'\\').split(r':\\', 1)[-1]
 
-    tmp_file = out_file.replace('.cpp', '.tmp')
-    lines = fix_and_get_lines(in_file, tmp_file)
-
-    part_map = {
-        'common.cpp': [
+	part_map = {
+		'common.cpp': [
 			'gb.h', 'ucg_tables.h', 'utf8proc_data.c', 'unicode.cpp',
-			'threading.cpp', 'common_memory.cpp','thread_pool.cpp', 'string.cpp',
+			'threading.cpp', 'common_memory.cpp', 'thread_pool.cpp', 'string.cpp',
 			## 'array.cpp', 'queue.cpp', 'range_cache.cpp',
 			'ptr_map.cpp', 'ptr_set.cpp', 'string_map.cpp', 'string16_map.cpp', 'string_set.cpp',
 			## 'priority_queue.cpp', 'string_interner.cpp', 'path.cpp'
 		]
-        , 'checker.cpp': [], 'llvm_backend.cpp': [], 'build_settings.cpp': [],
-        # 'timings.cpp': [], 'cached.cpp': [], 'bundle_command.cpp': [], 'bug_report.cpp': [],
-        'parser.cpp': [], 'tokenizer.cpp': [], 'docs.cpp': [],
-        'linker.cpp': [], 'big_int.cpp': [], 'exact_value.cpp': [],
-    } if 'main.' in in_file else {}
-    ret, sub_map = do_clean_ipp(base_pre, src_pre, file_pre, lines, part_map)
+		, 'checker.cpp': [], 'llvm_backend.cpp': [], 'build_settings.cpp': [],
+		'timings.cpp': [], 'cached.cpp': [], 'bundle_command.cpp': [], 'bug_report.cpp': [],
+		'parser.cpp': [], 'tokenizer.cpp': [], 'docs.cpp': [],
+		'linker.cpp': [], 'big_int.cpp': [], 'exact_value.cpp': [],
+		'parser.hpp': [], 'checker.hpp': ['checker_builtin_procs.hpp'],
+	} if 'main.' in in_file else {}
 
-    dump_cleaned_cpp(in_file, out_file, ret)
+	all_files, name_files = list_dir_by_name(out_dir, lambda f, n: '.i.' in n)
 
-    for part_name, lines in sub_map.items():
-        part_file = os.path.join(os.path.dirname(out_file), _out_name(part_name))
-        dump_cleaned_part_cpp(in_file, part_file, lines)
+	lines = fix_and_get_lines(in_file, out_file.replace('.cpp', '.tmp'))
+	ret, sub_map = do_clean_ipp(base_pre, src_pre, file_pre, lines, part_map)
 
-    _LOG('done: ' + out_file)
+	if len(all_files) != len(name_files): _LOG('list_dir not eq %d => %d ' % (len(all_files), len(name_files)))
+
+	dump_cleaned_cpp(in_file, out_file, ret, name_files)
+
+	for part_name, lines in sub_map.items():
+		part_file = os.path.join(os.path.dirname(out_file), _out_name(part_name))
+		dump_cleaned_part_cpp(in_file, part_file, lines, name_files)
+
+	_LOG('done: ' + out_file)
 
 
 def _build_lines(src_pre, file_pre, lines):
-    lines_i = [None for _ in lines]
-    kdx, len_, erase = 0, len(lines), False
-    while kdx < len_:
-        line_ = lines[kdx]
-        if line_.startswith('#line'):
-            aa = line_.split(" ", 2)
-            ff, line_no = aa[2][1:-1].split(r':\\', 1)[-1], int(aa[1])
-            df = ff.rsplit(r'\\', 1)[0]
-            lines[kdx] = ''
-            if df.startswith(src_pre):
-                # noinspection PyTypeChecker
-                lines_i[kdx] = (ff, line_no, line_)
-                erase = False
-            else:
-                erase = True
-        else:
-            if erase: lines[kdx] = ''
+	lines_i = [None for _ in lines]
+	kdx, len_, erase = 0, len(lines), False
+	while kdx < len_:
+		line_ = lines[kdx]
+		if line_.startswith('#line'):
+			aa = line_.split(" ", 2)
+			ff, line_no = aa[2][1:-1].split(r':\\', 1)[-1], int(aa[1])
+			df = ff.rsplit(r'\\', 1)[0]
+			lines[kdx] = ''
+			if df.startswith(src_pre):
+				# noinspection PyTypeChecker
+				lines_i[kdx] = (ff, line_no, line_)
+				erase = False
+			else:
+				erase = True
+		else:
+			if erase: lines[kdx] = ''
 
-        kdx += 1
+		kdx += 1
 
-    return lines_i
+	return lines_i
 
 
 def _build_ff_map(file_pre, lines_i):
-    def _update_ff_map(ff_, line_no_, kdx_):
-        if ff_ in ff_map:
-            if 0 <= ff_map[ff_][0] < kdx_: ff_map[ff_][0] = kdx_
-            if line_no_ > ff_map[ff_][1]: ff_map[ff_][1] = line_no_
-            if kdx_ > nn_map[ff_][1]: nn_map[ff_][1] = kdx_
-        else:
-            assert line_no_ == 1, "first line_no %d != 1 file: %s" % (line_no_, ff_)
-            _nf_ = ff_.rsplit(r'\\', 1)[-1]
-            ff_map[ff_] = [-1 if ff_ == file_pre else kdx_, line_no_, _nf_]
-            nn_map[ff_] = [kdx_, kdx_]
+	def _update_ff_map(ff_, line_no_, kdx_):
+		if ff_ in ff_map:
+			if 0 <= ff_map[ff_][0] < kdx_: ff_map[ff_][0] = kdx_
+			if line_no_ > ff_map[ff_][1]: ff_map[ff_][1] = line_no_
+			if kdx_ > nn_map[ff_][1]: nn_map[ff_][1] = kdx_
+		else:
+			assert line_no_ == 1, "first line_no %d != 1 file: %s" % (line_no_, ff_)
+			_nf_ = ff_.rsplit(r'\\', 1)[-1]
+			ff_map[ff_] = [-1 if ff_ == file_pre else kdx_, line_no_, _nf_]
+			nn_map[ff_] = [kdx_, kdx_]
 
-    ff_map, nn_map = {}, {}
-    for kdx, item in enumerate(lines_i, 0):
-        if not item: continue
-        ff, line_no, line_ = item
-        _update_ff_map(ff, line_no, kdx)
+	ff_map, nn_map = {}, {}
+	for kdx, item in enumerate(lines_i, 0):
+		if not item: continue
+		ff, line_no, line_ = item
+		_update_ff_map(ff, line_no, kdx)
 
-    kdx, len_, info_map = 0, len(lines_i), {}
-    for k, v in ff_map.items():
-        _, line_max_, nf_ = v
-        line_num, kdx = nn_map[k][1] - nn_map[k][0], nn_map[k][1]
-        while kdx < len_:
-            item = lines_i[kdx]
-            kdx += 1
+	kdx, len_, info_map = 0, len(lines_i), {}
+	for k, v in ff_map.items():
+		_, line_max_, nf_ = v
+		line_num, kdx = nn_map[k][1] - nn_map[k][0], nn_map[k][1]
+		while kdx < len_:
+			item = lines_i[kdx]
+			kdx += 1
 
-            if not item: continue
-            ff, line_no, line_ = item
-            kdx_max, line_max, nf = ff_map[ff] if ff in ff_map else (0, 0, '')
-            if nf_ != nf: break
+			if not item: continue
+			ff, line_no, line_ = item
+			kdx_max, line_max, nf = ff_map[ff] if ff in ff_map else (0, 0, '')
+			if nf_ != nf: break
 
-        info_map[k] = [nf_, line_num + kdx - nn_map[k][1], nn_map[k][0], nn_map[k][1], line_max_]
+		info_map[k] = [nf_, line_num + kdx - nn_map[k][1], nn_map[k][0], nn_map[k][1], line_max_]
 
-    files = info_map.values()
-    files.sort(key=lambda o: o[1])
+	files = info_map.values()
+	files.sort(key=lambda o: o[1])
 
-    return ff_map, info_map
+	return ff_map, info_map
 
 
 def __assert_lino_max(ff, last_kdx, kdx_max, line_no, is_need):
-    assert kdx_max == -1 or (
-            kdx_max >= last_kdx and (line_no >= 1 or (line_no == 1 and is_need))
-    ), 'start not eq %d file: %s' % (last_kdx, ff)
+	assert kdx_max == -1 or (
+			kdx_max >= last_kdx and (line_no >= 1 or (line_no == 1 and is_need))
+	), 'start not eq %d file: %s' % (last_kdx, ff)
 
 
 # noinspection PyUnresolvedReferences
 def do_clean_ipp(base_pre, src_pre, file_pre, lines, part_map):
-    lines_i = _build_lines(src_pre, file_pre, lines)
-    ff_map, nn_map = _build_ff_map(file_pre, lines_i)
+	lines_i = _build_lines(src_pre, file_pre, lines)
+	ff_map, nn_map = _build_ff_map(file_pre, lines_i)
 
-    kdx, len_, last_ff = 0, len(lines), ''
-    for jdx, item in enumerate(lines_i, 0):
-        if not item:
-            last_ff = ''
-            continue
+	kdx, len_, last_ff = 0, len(lines), ''
+	for jdx, item in enumerate(lines_i, 0):
+		if not item:
+			last_ff = ''
+			continue
 
-        # noinspection PyTupleAssignmentBalance
-        ff, line_no, line_ = item
-        kdx_max, line_max, nf = ff_map[ff] if ff in ff_map else (0, 0, '')
-        if line_no == 1 or line_no == line_max or kdx_max == -1:
-            if last_ff == ff:
-                last_ff = ''
-                continue
-            last_ff, lines[jdx] = ff, line_.replace(base_pre, '').replace(r'\\', '/')
+		# noinspection PyTupleAssignmentBalance
+		ff, line_no, line_ = item
+		kdx_max, line_max, nf = ff_map[ff] if ff in ff_map else (0, 0, '')
+		if line_no == 1 or line_no == line_max or kdx_max == -1:
+			if last_ff == ff:
+				last_ff = ''
+				continue
+			last_ff, lines[jdx] = ff, line_.replace(base_pre, '').replace(r'\\', '/')
 
-    sub_map, nf_map, last_nf = {k: [] for k in part_map.keys()}, {}, {}
-    while kdx < len_ and sub_map:
-        last_kdx, item = kdx, lines_i[kdx]
-        if last_nf and not item:
-            sub_map[last_nf].append([lines[kdx], lines_i[kdx]])
-            lines[kdx] = ''
+	sub_map, nf_map, last_nf = {k: [] for k in part_map.keys()}, {}, {}
+	while kdx < len_ and sub_map:
+		last_kdx, item = kdx, lines_i[kdx]
+		if last_nf and not item:
+			sub_map[last_nf].append([lines[kdx], lines_i[kdx]])
+			lines[kdx] = ''
 
-        kdx += 1
-        if not item: continue
-        # noinspection PyTupleAssignmentBalance
-        ff, line_no, line_ = item
-        kdx_max, line_max, nf = ff_map[ff] if ff in ff_map else (0, 0, '')
-        __assert_lino_max(ff, last_kdx, kdx_max, line_no, nf in sub_map)
-        if last_nf and nf not in sub_map: last_nf = ''; continue
-        if nf not in sub_map: continue
-        sub_map[nf].append([lines[last_kdx], lines_i[last_kdx]])
-        lines[last_kdx], last_nf = '#include "%s"' % (_out_name(nf),), nf
-        nf_map[nf] = item
-        while kdx <= kdx_max:
-            sub_map[nf].append([lines[kdx], lines_i[kdx]])
-            lines[kdx] = ''
-            kdx += 1
+		kdx += 1
+		if not item: continue
+		# noinspection PyTupleAssignmentBalance
+		ff, line_no, line_ = item
+		kdx_max, line_max, nf = ff_map[ff] if ff in ff_map else (0, 0, '')
+		__assert_lino_max(ff, last_kdx, kdx_max, line_no, nf in sub_map)
+		if last_nf and nf not in sub_map: last_nf = ''; continue
+		if nf not in sub_map: continue
+		sub_map[nf].append([lines[last_kdx], lines_i[last_kdx]])
+		lines[last_kdx], last_nf = '#include "%s"' % (_out_name(nf),), nf
+		nf_map[nf] = item
+		while kdx <= kdx_max:
+			sub_map[nf].append([lines[kdx], lines_i[kdx]])
+			lines[kdx] = ''
+			kdx += 1
 
-    out_map = {}
-    for sub_name, sub_item in sub_map.items():
-        need_subs = [sub for sub in part_map.get(sub_name, []) if sub]
-        if need_subs:
-            lines_, lines_i_ = [i[0] for i in sub_item], [i[1] for i in sub_item]
-            for need_sub in need_subs:
-                # noinspection PyUnresolvedReferences
-                tmp = sub_lines_of_part(nf_map[sub_name][0], need_sub, lines_i_, lines_)
-                out_map[need_sub] = [i + "\n" for i in tmp if i]
-            out_map[sub_name] = [i + "\n" for i in lines_ if i]
-        else:
-            out_map[sub_name] = [i[0] + "\n" for i in sub_item if i[0]]
+	out_map = {}
+	for sub_name, sub_item in sub_map.items():
+		need_subs = [sub for sub in part_map.get(sub_name, []) if sub]
+		if need_subs:
+			lines_, lines_i_ = [i[0] for i in sub_item], [i[1] for i in sub_item]
+			for need_sub in need_subs:
+				# noinspection PyUnresolvedReferences
+				tmp = sub_lines_of_part(nf_map[sub_name][0], need_sub, lines_i_, lines_)
+				out_map[need_sub] = [i + "\n" for i in tmp if i]
+			out_map[sub_name] = [i + "\n" for i in lines_ if i]
+		else:
+			out_map[sub_name] = [i[0] + "\n" for i in sub_item if i[0]]
 
-    return [i + "\n" for i in lines if i], out_map
+	return [i + "\n" for i in lines if i], out_map
 
 
 def sub_lines_of_part(file_pre, need_sub, lines_i, lines):
-    ff_map, nn_map = _build_ff_map(file_pre, lines_i)
+	ff_map, nn_map = _build_ff_map(file_pre, lines_i)
 
-    kdx, len_, erase, last_nf, sub_lines = 0, len(lines), False, '', []
-    while kdx < len_:
-        last_kdx, item = kdx, lines_i[kdx]
-        if last_nf and not item:
-            sub_lines.append(lines[kdx])
-            lines[kdx] = ''
+	kdx, len_, erase, last_nf, sub_lines = 0, len(lines), False, '', []
+	while kdx < len_:
+		last_kdx, item = kdx, lines_i[kdx]
+		if last_nf and not item:
+			sub_lines.append(lines[kdx])
+			lines[kdx] = ''
 
-        kdx += 1
-        if not item: continue
-        ff, line_no, line_ = item
-        kdx_max, line_max, nf = ff_map[ff] if ff in ff_map else (0, 0, '')
-        __assert_lino_max(ff, last_kdx, kdx_max, line_no, nf == need_sub)
-        lines[last_kdx] = line_ if ff == file_pre else lines[last_kdx]
-        if last_nf and nf != need_sub: break
-        if nf != need_sub: continue
-        sub_lines.append(lines[last_kdx])
-        lines[last_kdx], last_nf = '#include "%s"' % (_out_name(nf),), nf
-        while kdx <= kdx_max:
-            sub_lines.append(lines[kdx])
-            lines[kdx] = ''
-            kdx += 1
+		kdx += 1
+		if not item: continue
+		ff, line_no, line_ = item
+		kdx_max, line_max, nf = ff_map[ff] if ff in ff_map else (0, 0, '')
+		__assert_lino_max(ff, last_kdx, kdx_max, line_no, nf == need_sub)
+		lines[last_kdx] = line_ if ff == file_pre else lines[last_kdx]
+		if last_nf and nf != need_sub: break
+		if nf != need_sub: continue
+		sub_lines.append(lines[last_kdx])
+		lines[last_kdx], last_nf = '#include "%s"' % (_out_name(nf),), nf
+		while kdx <= kdx_max:
+			sub_lines.append(lines[kdx])
+			lines[kdx] = ''
+			kdx += 1
 
-    return sub_lines
+	return sub_lines
 
 
 def all_test(test_pre='_test'):
-    globals_dict = globals()
-    for k, v in globals_dict.items():
-        if k.startswith(test_pre):
-            _LOG("\n\n>>%s" % (k,))
-            if hasattr(v, '__call__'):
-                v()
+	globals_dict = globals()
+	for k, v in globals_dict.items():
+		if k.startswith(test_pre):
+			_LOG("\n\n>>%s" % (k,))
+			if hasattr(v, '__call__'):
+				v()
 
 
 # ===============================================================
 # ========================== TEST FUNC ==========================
 # ===============================================================
 class Error(Exception):
-    pass
+	pass
 
 
 def _unittest(func, *cases):
-    def _functest(func_, is_pass, *args, **kws):
-        result = None
-        try:
-            _LOG('\n%s -> %s' % (is_pass, func_.func_name))
-            result = func_(*args, **kws)
-            _LOG('=%s' % (json.dumps(result, indent=2),))
-        except Error as ex:
-            _LOG("%s -> %s:%s" % (is_pass, type(ex), ex))
-            if is_pass:
-                raise ex
-        else:
-            if not is_pass:
-                raise AssertionError("is_pass:%s but no Exception!!!" % (is_pass,))
-        return result
+	def _functest(func_, is_pass, *args, **kws):
+		result = None
+		try:
+			_LOG('\n%s -> %s' % (is_pass, func_.func_name))
+			result = func_(*args, **kws)
+			_LOG('=%s' % (json.dumps(result, indent=2),))
+		except Error as ex:
+			_LOG("%s -> %s:%s" % (is_pass, type(ex), ex))
+			if is_pass:
+				raise ex
+		else:
+			if not is_pass:
+				raise AssertionError("is_pass:%s but no Exception!!!" % (is_pass,))
+		return result
 
-    return [_functest(func, *case) for case in cases]
+	return [_functest(func, *case) for case in cases]
 
 
 def main(action='clean_ipp', in_file='src/main.i', out_file=None):
-    action = sys.argv[1] if len(sys.argv) >= 2 else action
-    in_file = sys.argv[2] if len(sys.argv) >= 3 else in_file
-    out_file = sys.argv[3] if len(sys.argv) >= 4 else out_file
+	action = sys.argv[1] if len(sys.argv) >= 2 else action
+	in_file = sys.argv[2] if len(sys.argv) >= 3 else in_file
+	out_file = sys.argv[3] if len(sys.argv) >= 4 else out_file
 
-    base = os.getcwd()
+	base = os.getcwd()
 
-    if action == 'all_test':
-        all_test()
-    elif action == 'clean_ipp':
-        clean_ipp(base, in_file, out_file)
-    else:
-        _LOG('''
+	if action == 'all_test':
+		all_test()
+	elif action == 'clean_ipp':
+		clean_ipp(base, in_file, out_file)
+	else:
+		_LOG('''
     useage ` python2 "%~f0" all_test | clean_ipp [in_file] [out_file]`
 
     ''')
 
 
 if __name__ == '__main__':
-    _LOG("\n========== START ===========")
-    main()
-    _LOG("\n==========  END  ===========")
+	_LOG("\n========== START ===========")
+	main()
+	_LOG("\n==========  END  ===========")

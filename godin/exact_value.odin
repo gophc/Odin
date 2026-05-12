@@ -1,15 +1,8 @@
-// odingo4/exact_value.odin
-// Translation of src/exact_value.cpp — compile-time exact value representation.
-//
-// External dependencies (defined in sibling .odin files in this package):
-//   Types:  BigInt, TokenKind, Ast, Type, Entity
-//   Procs:  big_int_*, compiler_error, permanent_allocator, heap_allocator,
-//           temporary_allocator, write_expr_to_string, strip_entity_wrapping,
-//           are_types_identical, quote_to_ascii (for []u16 variant)
-//
-// These are expected to exist in other files within the odingo4 package.
+// exact_value.odin - Pure Odin rewrite of src/cipp/exact_value.i.cpp
+// Package: godin
+// compile-time exact value representation
 
-package odingo4
+package godin
 
 import "core:fmt"
 import "core:math"

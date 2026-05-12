@@ -1,7 +1,8 @@
-Below is the complete Odin rewrite of `linker.i.cpp`, preserving structure, logic, and exported function signatures while using idiomatic Odin patterns.
+// linker.odin - Pure Odin rewrite of src/cipp/linker.i.cpp
+// Package: godin
+// compile linker value representation
 
-```odin
-package odingo3
+package godin
 
 import "core:fmt"
 import "core:strings"

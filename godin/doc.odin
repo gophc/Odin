@@ -1,9 +1,8 @@
-```odin
 // docs.odin - Pure Odin rewrite of src/cipp/docs.i.cpp
-// Package: odingo2
+// Package: godin
 // Binary .odin-doc format reader/writer and text doc printer
 
-package odingo2
+package godin
 
 import "core:fmt"
 import "core:os"
