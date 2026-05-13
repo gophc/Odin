@@ -343,3 +343,5 @@ phpsdk_setshell.bat
 
 godin/cmd/*.7z
 godin/cmd/*.zip
+odingo/*.7z
+odingo/*.zip
