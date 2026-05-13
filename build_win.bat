@@ -346,7 +346,7 @@ def clean_ipp(base, in_file, out_file=None, out_folder='cipp'):
 			'ptr_map.cpp', 'ptr_set.cpp', 'string_map.cpp', 'string16_map.cpp', 'string_set.cpp',
 			## 'priority_queue.cpp', 'string_interner.cpp', 'path.cpp'
 		]
-		, 'checker.cpp': [], 'llvm_backend.cpp': [], 'build_settings.cpp': [],
+		, 'checker.cpp': [], 'llvm_backend.cpp': [], 'build_settings.cpp': ['build_settings_microarch.cpp'],
 		'timings.cpp': [], 'cached.cpp': [], 'bundle_command.cpp': [], 'bug_report.cpp': [],
 		'parser.cpp': [], 'tokenizer.cpp': [], 'docs.cpp': [],
 		'linker.cpp': [], 'big_int.cpp': [], 'exact_value.cpp': [],
