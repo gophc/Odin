@@ -9,25 +9,34 @@ import sys
 import json
 
 redis_uri = "redis://:wstest@localhost:6379"
-rkey = 'tool_parser_x:req-1e19c03f-8000-019e-1282'
+rkey = 'tool_parser_x:req-1ec8b1c2-815b-019e-343b'
 
 
 def fix_and_load(text):
 	data = []
-	fixed = text.replace("\"}]<|tool", "\"}}]<|tool").replace("\"}]}]<|tool", "\"}]}}]<|tool");
+	fixed = text.replace("\n<|tool", "<|tool").replace("\"}]<|tool", "\"}}]<|tool").\
+		replace("\"}]}]<|tool", "\"}]}}]<|tool").replace("\"}}<|tool", "\"}}]<|tool"). \
+		replace("\"}}<|tool", "\"}}]<|tool").replace("\"}<|tool", "\"}}]<|tool")
 	json_text = fixed.split('begin|>', 1)[1].split('<|tool', 1)[0]
+
 	try:
 		data = json.loads(json_text)
 		assert isinstance(data, list), "json must as []"
+		return data
 	except Exception as ex:
-		_LOG("json.loads len: %d, err: %r" % (rkey, ex))
+		_LOG("json.loads len: %s, err: %r" % (rkey, ex))
+
+	fix_arr = ['', '', '']
+	for fix in [i for i in fix_arr if i]:
+		pass
+
 	return data
 
 
 def action_write(name, arg):
 	file_path, content = arg['file_path'], arg['content']
 	with open(file_path, 'w') as wf:
-		wf.write(content)
+		wf.write(content.encode('utf-8'))
 
 	_LOG("write name: `%s`, file: `%s`, len: %d" % (name, file_path, len(content)))
 
