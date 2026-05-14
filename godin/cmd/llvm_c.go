@@ -445,6 +445,9 @@ type LLVMCodeGenFileType int
 const (
 	LLVMCodeGenFileTypeAssemblySource LLVMCodeGenFileType = 0
 	LLVMCodeGenFileTypeObject         LLVMCodeGenFileType = 1
+
+	LLVMAssemblyFile = LLVMCodeGenFileTypeAssemblySource
+	LLVMObjectFile   = LLVMCodeGenFileTypeObject
 )
 
 type LLVMGlobalISelAbortMode int
@@ -1310,6 +1313,39 @@ func LLVMDisposeTargetMachine(TM LLVMTargetMachineRef) {}
 func LLVMGetTargetMachineTarget(TM LLVMTargetMachineRef) LLVMTargetRef { return 0 }
 func LLVMGetTargetMachineTriple(TM LLVMTargetMachineRef) *byte { return nil }
 func LLVMGetTargetMachineCPU(TM LLVMTargetMachineRef) *byte { return nil }
+func LLVMInitializeX86TargetInfo() {}
+func LLVMInitializeX86Target() {}
+func LLVMInitializeX86TargetMC() {}
+func LLVMInitializeX86AsmPrinter() {}
+func LLVMInitializeX86AsmParser() {}
+func LLVMInitializeX86Disassembler() {}
+func LLVMInitializeAArch64TargetInfo() {}
+func LLVMInitializeAArch64Target() {}
+func LLVMInitializeAArch64TargetMC() {}
+func LLVMInitializeAArch64AsmPrinter() {}
+func LLVMInitializeAArch64AsmParser() {}
+func LLVMInitializeAArch64Disassembler() {}
+func LLVMInitializeWebAssemblyTargetInfo() {}
+func LLVMInitializeWebAssemblyTarget() {}
+func LLVMInitializeWebAssemblyTargetMC() {}
+func LLVMInitializeWebAssemblyAsmPrinter() {}
+func LLVMInitializeWebAssemblyAsmParser() {}
+func LLVMInitializeWebAssemblyDisassembler() {}
+func LLVMInitializeRISCVTargetInfo() {}
+func LLVMInitializeRISCVTarget() {}
+func LLVMInitializeRISCVTargetMC() {}
+func LLVMInitializeRISCVAsmPrinter() {}
+func LLVMInitializeRISCVAsmParser() {}
+func LLVMInitializeRISCVDisassembler() {}
+func LLVMInitializeARMTargetInfo() {}
+func LLVMInitializeARMTarget() {}
+func LLVMInitializeARMTargetMC() {}
+func LLVMInitializeARMAsmPrinter() {}
+func LLVMInitializeARMAsmParser() {}
+func LLVMInitializeARMDisassembler() {}
+func LLVMGetTargetFromTriple(Triple string, T *LLVMTargetRef, ErrorMessage *string) LLVMBool { return 0 }
+func LLVMSetTarget(M LLVMModuleRef, Triple string) {}
+func LLVMSetTargetMachineFastISel(TM LLVMTargetMachineRef, Enable LLVMBool) {}
 func LLVMGetTargetMachineFeatureString(TM LLVMTargetMachineRef) *byte { return nil }
 func LLVMCreateTargetDataLayout(TM LLVMTargetMachineRef) LLVMTargetDataRef { return 0 }
 func LLVMSetTargetMachineAsmVerbosity(TM LLVMTargetMachineRef, Verbose LLVMBool) {}
@@ -1470,6 +1506,7 @@ func LLVMDILocationGetColumn(Location LLVMMetadataRef) uint { return 0 }
 func LLVMDILocationGetScope(Location LLVMMetadataRef) LLVMMetadataRef { return 0 }
 func LLVMDILocationGetInlinedAt(Location LLVMMetadataRef) LLVMMetadataRef { return 0 }
 func LLVMDIScopeGetFile(Scope LLVMMetadataRef) LLVMMetadataRef { return 0 }
+func LLVMDIBuilderFinalize(Builder LLVMDIBuilderRef) {}
 func LLVMDIBuilderCreateExpression(Builder LLVMDIBuilderRef, Value []uint64, NumElements uint) LLVMMetadataRef { return 0 }
 func LLVMDIBuilderCreateConstantValueExpression(Builder LLVMDIBuilderRef, Value string, ValueLen uint) LLVMMetadataRef { return 0 }
 func LLVMDIBuilderCreateGlobalVariableExpression(Builder LLVMDIBuilderRef, Scope LLVMMetadataRef, Name string, NameLen uint, LinkageName string, LinkageNameLen uint, File LLVMMetadataRef, LineNo uint, Ty LLVMMetadataRef, IsLocalToUnit LLVMBool, Val LLVMValueRef, DIExpr LLVMMetadataRef, Decl LLVMMetadataRef, AlignInBits uint32) LLVMMetadataRef { return 0 }
@@ -1516,7 +1553,11 @@ func LLVMPassBuilderOptionsSetRemarksWithHotness(Options LLVMPassBuilderOptionsR
 func LLVMPassBuilderOptionsSetRemarksHotnessThreshold(Options LLVMPassBuilderOptionsRef, Threshold uint64) {}
 func LLVMPassBuilderOptionsSetRemarksFormat(Options LLVMPassBuilderOptionsRef, RemarksFormat string) {}
 func LLVMDisposePassBuilderOptions(Options LLVMPassBuilderOptionsRef) {}
-func LLVMRunPasses(M LLVMModuleRef, Passes string, MRef LLVMTargetMachineRef, Options LLVMPassBuilderOptionsRef) LLVMBool { return 0 }
+func LLVMRunPasses(M LLVMModuleRef, Passes string, MRef LLVMTargetMachineRef, Options LLVMPassBuilderOptionsRef) LLVMErrorRef { return 0 }
+func LLVMConsumeError(Err LLVMErrorRef) {}
+func LLVMGetErrorMessage(Err LLVMErrorRef) *byte { return nil }
+func LLVMDisposeErrorMessage(ErrMsg *byte) {}
+
 func LLVMCreateObjectFile(Obj LLVMBinaryRef) LLVMObjectFileRef { return 0 }
 func LLVMDisposeObjectFile(Obj LLVMObjectFileRef) {}
 func LLVMGetSections(Obj LLVMObjectFileRef) LLVMSectionIteratorRef { return 0 }
