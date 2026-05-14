@@ -667,6 +667,8 @@ func LLVMGetMDNodeID(Name string, SLen uint) uint { return 0 }
 func LLVMGetEnumAttributeKindForName(Name string, SLen uint) uint { return 0 }
 func LLVMGetLastEnumAttributeKind() uint { return 0 }
 func LLVMCreateAttribute(C LLVMContextRef, KindID uint, Val uint64) LLVMAttributeRef { return 0 }
+func LLVMCreateEnumAttribute(C LLVMContextRef, KindID uint, Val uint64) LLVMAttributeRef { return 0 }
+func LLVMCreateTypeAttribute(C LLVMContextRef, KindID uint, Ty LLVMTypeRef) LLVMAttributeRef { return 0 }
 func LLVMCreateStringAttribute(C LLVMContextRef, K string, KLength uint, V string, VLength uint) LLVMAttributeRef { return 0 }
 func LLVMAttributeGetEnumKind(A LLVMAttributeRef) uint { return 0 }
 func LLVMAttributeGetEnumValue(A LLVMAttributeRef) uint64 { return 0 }
@@ -1038,6 +1040,8 @@ func LLVMSetMetadata2(Val LLVMValueRef, KindID uint, MDNode LLVMMetadataRef) {}
 func LLVMBasicBlockAsValue(BB LLVMBasicBlockRef) LLVMValueRef { return 0 }
 func LLVMValueIsBasicBlock(Val LLVMValueRef) LLVMBool { return 0 }
 func LLVMValueAsBasicBlock(Val LLVMValueRef) LLVMBasicBlockRef { return 0 }
+func LLVMCreateBasicBlockInContext(C LLVMContextRef, Name string) LLVMBasicBlockRef { return 0 }
+func LLVMAppendExistingBasicBlock(Fn LLVMValueRef, BB LLVMBasicBlockRef) {}
 func LLVMGetBasicBlockName(BB LLVMBasicBlockRef) *byte { return nil }
 func LLVMGetBasicBlockParent(BB LLVMBasicBlockRef) LLVMValueRef { return 0 }
 func LLVMGetBasicBlockTerminator(BB LLVMBasicBlockRef) LLVMValueRef { return 0 }
