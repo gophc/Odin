@@ -63,7 +63,6 @@ func lb_add_global_generated_from_procedure(p *lbProcedure, typ *Type, value ...
 func lb_add_global_generated_with_name(m *lbModule, typ *Type, value lbValue, name string, entity ...**Entity) lbAddr { return lbAddr{} }
 func lb_add_local(p *lbProcedure, typ *Type, e ...*Entity) lbAddr { return lbAddr{} }
 func lb_add_foreign_library_path(m *lbModule, e *Entity) {}
-func lb_typeid(m *lbModule, typ *Type) lbValue { return lbValue{} }
 func lb_address_from_load_or_generate_local(p *lbProcedure, value lbValue) lbValue { return lbValue{} }
 func lb_address_from_load(p *lbProcedure, value lbValue) lbValue { return lbValue{} }
 func lb_add_defer_node(p *lbProcedure, scope_index isize, stmt *Ast) {}
@@ -89,7 +88,6 @@ func lb_emit_increment(p *lbProcedure, addr lbValue) {}
 func lb_emit_select(p *lbProcedure, cond lbValue, x lbValue, y lbValue) lbValue { return lbValue{} }
 func lb_emit_mul_add(p *lbProcedure, a lbValue, b lbValue, c lbValue, t *Type) lbValue { return lbValue{} }
 func lb_fill_slice(p *lbProcedure, slice lbAddr, base_elem lbValue, len lbValue) {}
-func lb_type_info(p *lbProcedure, typ *Type) lbValue { return lbValue{} }
 func lb_find_or_add_entity_string(m *lbModule, str string, custom_link_section bool) lbValue { return lbValue{} }
 func lb_generate_anonymous_proc_lit(m *lbModule, prefix_name string, expr *Ast, parent ...*lbProcedure) lbValue { return lbValue{} }
 func lb_is_const(value lbValue) bool { return false }
