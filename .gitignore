@@ -348,3 +348,6 @@ odingo/*.zip
 godin/*.7z
 godin/*.zip
 *.pyc
+godin/cmd/nul
+godin/nul
+nul
