@@ -700,6 +700,7 @@ type AstRangeStmt struct {
 	InToken Token
 	Expr    *Ast
 	Body    *Ast
+	Reverse bool
 }
 
 type AstUnrollRangeStmt struct {
