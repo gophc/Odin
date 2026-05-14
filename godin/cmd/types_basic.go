@@ -1,6 +1,8 @@
 // Depends on: common.odin (String, isize, i64, u8, u32, ExactValue, Entity, Scope, Ast, InternedString, BlockingMutex, RecursiveMutex, Wait_Signal, ProcCallingConvention, UnionTypeKind, Slice, TokenKind, Token)
 package cmd
 
+import "sync"
+
 type BasicKind int
 
 const (
@@ -635,4 +637,7 @@ const (
 	ProcOverloadNotProcedure
 )
 
-type GenTypesData struct{}
+type GenTypesData struct {
+	Types []*Entity
+	Mutex sync.Mutex
+}
