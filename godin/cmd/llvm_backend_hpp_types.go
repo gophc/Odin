@@ -2,9 +2,6 @@ package cmd
 
 import "sync/atomic"
 
-// lbFunctionType forward declaration
-type lbFunctionType struct{}
-
 type lbValue struct {
 	Value LLVMValueRef
 	Type  *Type

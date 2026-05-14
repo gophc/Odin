@@ -352,7 +352,8 @@ def clean_ipp(base, in_file, out_file=None, out_folder='cipp'):
 			'llvm_backend.hpp', 'llvm_abi.cpp', 'llvm_backend_opt.cpp', 'llvm_backend_general.cpp',
 			'llvm_backend_debug.cpp', 'llvm_backend_const.cpp', 'llvm_backend_type.cpp',
 			'llvm_backend_utility.cpp', 'llvm_backend_expr.cpp', 'llvm_backend_stmt.cpp',
-			'llvm_backend_proc.cpp', 'llvm_backend_passes.cpp'
+			'llvm_backend_proc.cpp',
+			## 'llvm_backend_passes.cpp',
 		], 'build_settings.cpp': ['build_settings_microarch.cpp'],
 		'timings.cpp': [], 'cached.cpp': [], 'bundle_command.cpp': [], 'bug_report.cpp': [],
 		'parser.cpp': [], 'tokenizer.cpp': [], 'docs.cpp': [],
