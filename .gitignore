@@ -347,3 +347,4 @@ odingo/*.7z
 odingo/*.zip
 godin/*.7z
 godin/*.zip
+*.pyc
