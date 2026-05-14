@@ -1478,7 +1478,7 @@ func LLVMSetSubprogram(Func LLVMValueRef, SP LLVMMetadataRef) {}
 func LLVMDIBuilderGetOrCreateTypeArray(Builder LLVMDIBuilderRef, Types []LLVMMetadataRef, Length uint) LLVMMetadataRef { return 0 }
 func LLVMDIBuilderGetOrCreateSubrange(Builder LLVMDIBuilderRef, LowerBound int64, Count int64) LLVMMetadataRef { return 0 }
 func LLVMDIBuilderGetOrCreateArray(Builder LLVMDIBuilderRef, Data []LLVMMetadataRef, Length uint) LLVMMetadataRef { return 0 }
-func LLVMDIBuilderInsertDeclareAtEnd(Builder LLVMDIBuilderRef, Storage LLVMValueRef, DIExpr LLVMMetadataRef, DILocation LLVMMetadataRef, Block LLVMBasicBlockRef) LLVMDbgRecordRef { return 0 }
+func LLVMDIBuilderInsertDeclareAtEnd(Builder LLVMDIBuilderRef, Storage LLVMValueRef, VarInfo LLVMMetadataRef, DIExpr LLVMMetadataRef, DILocation LLVMMetadataRef, Block LLVMBasicBlockRef) LLVMDbgRecordRef { return 0 }
 func LLVMDIBuilderInsertValueAtEnd(Builder LLVMDIBuilderRef, Val LLVMValueRef, DIExpr LLVMMetadataRef, DILocation LLVMMetadataRef, Block LLVMBasicBlockRef) LLVMDbgRecordRef { return 0 }
 func LLVMDIBuilderInsertDbgValueBefore(Builder LLVMDIBuilderRef, Val LLVMValueRef, DIExpr LLVMMetadataRef, DILocation LLVMMetadataRef, Instr LLVMValueRef) LLVMDbgRecordRef { return 0 }
 func LLVMDIBuilderInsertDbgValueAtEnd(Builder LLVMDIBuilderRef, Val LLVMValueRef, DIExpr LLVMMetadataRef, DILocation LLVMMetadataRef, Block LLVMBasicBlockRef) LLVMDbgRecordRef { return 0 }

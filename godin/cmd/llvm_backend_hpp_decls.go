@@ -113,7 +113,7 @@ func lb_const_source_code_location_const(m *lbModule, procedure string, pos Toke
 func lb_handle_param_value(p *lbProcedure, parameter_type *Type, param_value ParameterValue, procedure_type *TypeProc, call_expression *Ast) lbValue { return lbValue{} }
 func lb_equal_proc_for_type(m *lbModule, typ *Type) lbValue { return lbValue{} }
 func lb_hasher_proc_for_type(m *lbModule, typ *Type) lbValue { return lbValue{} }
-func lb_debug_type(m *lbModule, typ *Type) LLVMMetadataRef { return 0 }
+
 func lb_emit_count_ones(p *lbProcedure, x lbValue, typ *Type) lbValue { return lbValue{} }
 func lb_emit_count_zeros(p *lbProcedure, x lbValue, typ *Type) lbValue { return lbValue{} }
 func lb_emit_count_trailing_zeros(p *lbProcedure, x lbValue, typ *Type) lbValue { return lbValue{} }
