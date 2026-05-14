@@ -19,6 +19,23 @@ const (
 	ExactValueCount
 )
 
+// Underscore aliases for ExactValueKind constants
+const (
+	ExactValue_Invalid    = ExactValueInvalid
+	ExactValue_Bool       = ExactValueBool
+	ExactValue_String     = ExactValueString
+	ExactValue_Integer    = ExactValueInteger
+	ExactValue_Float      = ExactValueFloat
+	ExactValue_Complex    = ExactValueComplex
+	ExactValue_Quaternion = ExactValueQuaternion
+	ExactValue_Pointer    = ExactValuePointer
+	ExactValue_Compound   = ExactValueCompound
+	ExactValue_Procedure  = ExactValueProcedure
+	ExactValue_Typeid     = ExactValueTypeid
+	ExactValue_String16   = ExactValueString16
+	ExactValue_Count      = ExactValueCount
+)
+
 type Complex128 struct {
 	Real float64
 	Imag float64

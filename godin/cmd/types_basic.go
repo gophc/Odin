@@ -217,6 +217,33 @@ const (
 	TypeCount
 )
 
+// Underscore aliases for TypeKind constants
+const (
+	Type_Invalid                 = TypeInvalid
+	Type_Basic                   = TypeBasic
+	Type_Named                   = TypeNamed
+	Type_Generic                 = TypeGeneric
+	Type_Pointer                 = TypePointer
+	Type_MultiPointer            = TypeMultiPointer
+	Type_Array                   = TypeArray
+	Type_EnumeratedArray         = TypeEnumeratedArray
+	Type_Slice                   = TypeSlice
+	Type_DynamicArray            = TypeDynamicArray
+	Type_FixedCapacityDynamicArray = TypeFixedCapacityDynamicArray
+	Type_Map                     = TypeMap
+	Type_Struct                  = TypeStruct
+	Type_Union                   = TypeUnion
+	Type_Enum                    = TypeEnum
+	Type_Tuple                   = TypeTuple
+	Type_Proc                    = TypeProc
+	Type_BitSet                  = TypeBitSet
+	Type_SimdVector              = TypeSimdVector
+	Type_Matrix                  = TypeMatrix
+	Type_BitField                = TypeBitField
+	Type_SoaPointer              = TypeSoaPointer
+	Type_Count                   = TypeCount
+)
+
 var TypeStrings = []string{
 	"Invalid", "Basic", "Named", "Generic", "Pointer", "MultiPointer",
 	"Array", "EnumeratedArray", "Slice", "DynamicArray",

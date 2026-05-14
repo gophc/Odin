@@ -24,6 +24,25 @@ const (
 	AddressingSwizzleVariable AddressingMode = 14
 )
 
+// Underscore aliases for AddressingMode constants
+const (
+	Addressing_Invalid       = AddressingInvalid
+	Addressing_NoValue       = AddressingNoValue
+	Addressing_Value         = AddressingValue
+	Addressing_Context       = AddressingContext
+	Addressing_Variable      = AddressingVariable
+	Addressing_Constant      = AddressingConstant
+	Addressing_Type          = AddressingType
+	Addressing_Builtin       = AddressingBuiltin
+	Addressing_ProcGroup     = AddressingProcGroup
+	Addressing_MapIndex      = AddressingMapIndex
+	Addressing_OptionalOk    = AddressingOptionalOk
+	Addressing_OptionalOkPtr = AddressingOptionalOkPtr
+	Addressing_SoaVariable   = AddressingSoaVariable
+	Addressing_SwizzleValue    = AddressingSwizzleValue
+	Addressing_SwizzleVariable = AddressingSwizzleVariable
+)
+
 var addressingModeStrings = []String{
 	{Data: strData("Invalid"), Len: 7}, {Data: strData("NoValue"), Len: 7}, {Data: strData("Value"), Len: 5}, {Data: strData("Context"), Len: 7}, {Data: strData("Variable"), Len: 8}, {Data: strData("Constant"), Len: 8}, {Data: strData("Type"), Len: 4}, {Data: strData("Builtin"), Len: 7}, {Data: strData("ProcGroup"), Len: 9}, {Data: strData("MapIndex"), Len: 8}, {Data: strData("OptionalOk"), Len: 10}, {Data: strData("OptionalOkPtr"), Len: 13}, {Data: strData("SoaVariable"), Len: 11}, {Data: strData("SwizzleValue"), Len: 12}, {Data: strData("SwizzleVariable"), Len: 15},
 }
@@ -306,6 +325,101 @@ const (
 	AstCOUNT
 )
 
+// Underscore aliases for AstKind constants (used by checker code)
+const (
+	Ast_Invalid              = AstInvalid
+	Ast_Ident                = AstIdent
+	Ast_Implicit             = AstImplicit
+	Ast_Uninit               = AstUninit
+	Ast_BasicLit             = AstBasicLit
+	Ast_BasicDirective       = AstBasicDirective
+	Ast_Ellipsis             = AstEllipsis
+	Ast_ProcGroup            = AstProcGroup
+	Ast_ProcLit              = AstProcLit
+	Ast_CompoundLit          = AstCompoundLit
+	Ast_ExprBegin            = AstExprBegin
+	Ast_BadExpr              = AstBadExpr
+	Ast_TagExpr              = AstTagExpr
+	Ast_UnaryExpr            = AstUnaryExpr
+	Ast_BinaryExpr           = AstBinaryExpr
+	Ast_ParenExpr            = AstParenExpr
+	Ast_SelectorExpr         = AstSelectorExpr
+	Ast_ImplicitSelectorExpr = AstImplicitSelectorExpr
+	Ast_SelectorCallExpr     = AstSelectorCallExpr
+	Ast_IndexExpr            = AstIndexExpr
+	Ast_DerefExpr            = AstDerefExpr
+	Ast_SliceExpr            = AstSliceExpr
+	Ast_CallExpr             = AstCallExpr
+	Ast_FieldValue           = AstFieldValue
+	Ast_EnumFieldValue       = AstEnumFieldValue
+	Ast_TernaryIfExpr        = AstTernaryIfExpr
+	Ast_TernaryWhenExpr      = AstTernaryWhenExpr
+	Ast_OrElseExpr           = AstOrElseExpr
+	Ast_OrReturnExpr         = AstOrReturnExpr
+	Ast_OrBranchExpr         = AstOrBranchExpr
+	Ast_TypeAssertion        = AstTypeAssertion
+	Ast_TypeCast             = AstTypeCast
+	Ast_AutoCast             = AstAutoCast
+	Ast_InlineAsmExpr        = AstInlineAsmExpr
+	Ast_MatrixIndexExpr      = AstMatrixIndexExpr
+	Ast_ExprEnd              = AstExprEnd
+	Ast_StmtBegin            = AstStmtBegin
+	Ast_BadStmt              = AstBadStmt
+	Ast_EmptyStmt            = AstEmptyStmt
+	Ast_ExprStmt             = AstExprStmt
+	Ast_AssignStmt           = AstAssignStmt
+	Ast_ComplexStmtBegin     = AstComplexStmtBegin
+	Ast_BlockStmt            = AstBlockStmt
+	Ast_IfStmt               = AstIfStmt
+	Ast_WhenStmt             = AstWhenStmt
+	Ast_ReturnStmt           = AstReturnStmt
+	Ast_ForStmt              = AstForStmt
+	Ast_RangeStmt            = AstRangeStmt
+	Ast_UnrollRangeStmt      = AstUnrollRangeStmt
+	Ast_CaseClause           = AstCaseClause
+	Ast_SwitchStmt           = AstSwitchStmt
+	Ast_TypeSwitchStmt       = AstTypeSwitchStmt
+	Ast_DeferStmt            = AstDeferStmt
+	Ast_BranchStmt           = AstBranchStmt
+	Ast_UsingStmt            = AstUsingStmt
+	Ast_ComplexStmtEnd       = AstComplexStmtEnd
+	Ast_StmtEnd              = AstStmtEnd
+	Ast_DeclBegin            = AstDeclBegin
+	Ast_BadDecl              = AstBadDecl
+	Ast_ForeignBlockDecl     = AstForeignBlockDecl
+	Ast_Label                = AstLabel
+	Ast_ValueDecl            = AstValueDecl
+	Ast_PackageDecl          = AstPackageDecl
+	Ast_ImportDecl           = AstImportDecl
+	Ast_ForeignImportDecl    = AstForeignImportDecl
+	Ast_DeclEnd              = AstDeclEnd
+	Ast_Attribute            = AstAttribute
+	Ast_Field                = AstField
+	Ast_BitFieldField        = AstBitFieldField
+	Ast_FieldList            = AstFieldList
+	Ast_TypeBegin            = AstTypeBegin
+	Ast_TypeidType           = AstTypeidType
+	Ast_HelperType           = AstHelperType
+	Ast_DistinctType         = AstDistinctType
+	Ast_PolyType             = AstPolyType
+	Ast_ProcType             = AstProcType
+	Ast_PointerType          = AstPointerType
+	Ast_RelativeType         = AstRelativeType
+	Ast_MultiPointerType     = AstMultiPointerType
+	Ast_ArrayType            = AstArrayType
+	Ast_DynamicArrayType     = AstDynamicArrayType
+	Ast_FixedCapacityDynamicArrayType = AstFixedCapacityDynamicArrayType
+	Ast_StructType           = AstStructType
+	Ast_UnionType            = AstUnionType
+	Ast_EnumType             = AstEnumType
+	Ast_BitSetType           = AstBitSetType
+	Ast_BitFieldType         = AstBitFieldType
+	Ast_MapType              = AstMapType
+	Ast_MatrixType           = AstMatrixType
+	Ast_TypeEnd              = AstTypeEnd
+	Ast_COUNT                = AstCOUNT
+)
+
 var astStrings []String // will be initialized inline as a large init function
 
 // AstIdent through AstMatrixIndexExpr sub-structs
@@ -556,10 +670,12 @@ type AstIfStmt struct {
 }
 
 type AstWhenStmt struct {
-	Token     Token
-	Cond      *Ast
-	Body      *Ast
-	ElseStmt  *Ast
+	Token               Token
+	Cond                *Ast
+	Body                *Ast
+	ElseStmt            *Ast
+	IsConditionDetermined bool
+	DeterminedCond      bool
 }
 
 type AstReturnStmt struct {
@@ -1012,6 +1128,26 @@ const (
 	ProcCCForeignBlockDefault ProcCallingConvention = -1
 )
 
+// Underscore aliases for ProcCallingConvention constants
+const (
+	ProcCC_Invalid            = ProcCCInvalid
+	ProcCC_Odin               = ProcCCOdin
+	ProcCC_Contextless        = ProcCCContextless
+	ProcCC_CDecl              = ProcCCCDecl
+	ProcCC_StdCall            = ProcCCStdCall
+	ProcCC_FastCall           = ProcCCFastCall
+	ProcCC_None               = ProcCCNone
+	ProcCC_Naked              = ProcCCNaked
+	ProcCC_InlineAsm          = ProcCCInlineAsm
+	ProcCC_Win64              = ProcCCWin64
+	ProcCC_SysV               = ProcCCSysV
+	ProcCC_PreserveNone       = ProcCCPreserveNone
+	ProcCC_PreserveMost       = ProcCCPreserveMost
+	ProcCC_PreserveAll        = ProcCCPreserveAll
+	ProcCC_MAX                = ProcCCMAX
+	ProcCC_ForeignBlockDefault = ProcCCForeignBlockDefault
+)
+
 var procCallingConventionStrings = []string{
 	"", "odin", "contextless", "cdecl", "stdcall", "fastcall", "none", "naked", "inlineasm",
 	"win64", "sysv", "preserve/none", "preserve/most", "preserve/all",
@@ -1031,6 +1167,17 @@ const (
 	StateFlagSelectorCallExpr   StateFlag = 1 << 5
 	StateFlagDirectiveWasFalse  StateFlag = 1 << 6
 	StateFlagBeenHandled         StateFlag = 1 << 7
+)
+
+// Underscore aliases for StateFlag constants
+const (
+	StateFlag_BoundsCheck       = StateFlagBoundsCheck
+	StateFlag_NoBoundsCheck     = StateFlagNoBoundsCheck
+	StateFlag_TypeAssert        = StateFlagTypeAssert
+	StateFlag_NoTypeAssert      = StateFlagNoTypeAssert
+	StateFlag_SelectorCallExpr  = StateFlagSelectorCallExpr
+	StateFlag_DirectiveWasFalse = StateFlagDirectiveWasFalse
+	StateFlag_BeenHandled       = StateFlagBeenHandled
 )
 
 type ViralStateFlag uint8
