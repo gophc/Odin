@@ -180,12 +180,8 @@ import json
 from StringIO import StringIO
 from contextlib import closing
 
-def _LOG(msg, handle=None):
-	print(msg, file=sys.stderr)
-	if handle:
-		handle.write(msg + '\n')
-		handle.flush()
 
+# region  ----------- HELP FUNC -----------
 
 def fix_and_get_lines(in_file, tmp_file):
 	if os.path.isfile(tmp_file):
@@ -210,21 +206,21 @@ def fix_and_get_lines(in_file, tmp_file):
 
 
 def _listdir(str_dir, filter_func, skips):
-	all_files, current_files = {}, os.listdir(str_dir)
+	path_files, current_files = {}, os.listdir(str_dir)
 	for file_name in current_files:
 		if file_name == '.' or file_name == '..':
 			continue
 		full_name = os.path.join(str_dir, file_name)
 		if os.path.isfile(full_name):
 			if filter_func(full_name, file_name):
-				all_files.setdefault(full_name, file_name)
+				path_files.setdefault(full_name, file_name)
 		elif os.path.isdir(full_name) and file_name not in skips \
 				and not file_name.startswith('.') and not file_name.startswith('$'):
 			next_files = _listdir(full_name, filter_func, skips)
 			for n_full_name, n_file_name in next_files.items():
-				all_files.setdefault(n_full_name, n_file_name)
+				path_files.setdefault(n_full_name, n_file_name)
 
-	return all_files
+	return path_files
 
 
 def list_dir_by_name(str_dir, filter_func=None, encoding=None, skips=None):
@@ -235,14 +231,14 @@ def list_dir_by_name(str_dir, filter_func=None, encoding=None, skips=None):
 		return {}
 
 	filter_func = filter_func if hasattr(filter_func, '__call__') else lambda f, n: True
-	all_files, name_files, _all_files = {}, {}, _listdir(_str_dir, filter_func, skips)
-	for n_full_name, n_file_name in _all_files.items():
+	path_files, name_files, _path_files = {}, {}, _listdir(_str_dir, filter_func, skips)
+	for n_full_name, n_file_name in _path_files.items():
 		stat = os.stat(n_full_name)
 		_full_name = n_full_name.decode(encoding) if encoding else n_full_name
 		_file_name = n_file_name.decode(encoding) if encoding else n_file_name
-		all_files[_full_name] = [_file_name, stat]
+		path_files[_full_name] = [_file_name, stat]
 		name_files[_file_name] = [_full_name, stat]
-	return all_files, name_files
+	return path_files, name_files
 
 
 def dump_cleaned_cpp(in_file, out_file, lines, name_files=None):
@@ -324,6 +320,8 @@ def _out_name(s):
 	return s
 
 
+# endregion
+
 def clean_ipp(base, in_file, out_file=None, out_folder='cipp'):
 	out_dir = os.path.join(os.path.dirname(os.path.abspath(in_file)), out_folder)
 	in_file = os.path.abspath(in_file) if os.path.isfile(in_file) else os.path.join(base, in_file)
@@ -346,7 +344,16 @@ def clean_ipp(base, in_file, out_file=None, out_folder='cipp'):
 			'ptr_map.cpp', 'ptr_set.cpp', 'string_map.cpp', 'string16_map.cpp', 'string_set.cpp',
 			## 'priority_queue.cpp', 'string_interner.cpp', 'path.cpp'
 		]
-		, 'checker.cpp': [], 'llvm_backend.cpp': [], 'build_settings.cpp': [],
+		, 'checker.cpp': [
+			'types.cpp',
+			'check_expr.cpp', 'check_builtin.cpp', 'check_type.cpp', 'name_canonicalization.cpp',
+			'check_decl.cpp', 'check_stmt.cpp',
+		], 'llvm_backend.cpp': [
+			'llvm_backend.hpp', 'llvm_abi.cpp', 'llvm_backend_opt.cpp', 'llvm_backend_general.cpp',
+			'llvm_backend_debug.cpp', 'llvm_backend_const.cpp', 'llvm_backend_type.cpp',
+			'llvm_backend_utility.cpp', 'llvm_backend_expr.cpp', 'llvm_backend_stmt.cpp',
+			'llvm_backend_proc.cpp', 'llvm_backend_passes.cpp'
+		], 'build_settings.cpp': ['build_settings_microarch.cpp'],
 		'timings.cpp': [], 'cached.cpp': [], 'bundle_command.cpp': [], 'bug_report.cpp': [],
 		'parser.cpp': [], 'tokenizer.cpp': [], 'docs.cpp': [],
 		'linker.cpp': [], 'big_int.cpp': [], 'exact_value.cpp': [],
@@ -358,7 +365,12 @@ def clean_ipp(base, in_file, out_file=None, out_folder='cipp'):
 	lines = fix_and_get_lines(in_file, out_file.replace('.cpp', '.tmp'))
 	ret, sub_map = do_clean_ipp(base_pre, src_pre, file_pre, lines, part_map)
 
-	if len(all_files) != len(name_files): _LOG('list_dir not eq %d => %d ' % (len(all_files), len(name_files)))
+	if len(all_files) != len(name_files):
+		dup = [v[0] for k, v in all_files.items() if k not in {f[0]:n for n, f in name_files.items()}]
+		_LOG('list_dir not eq %d => %d :' % (len(all_files), len(name_files)))
+		[_LOG('  %s :\n    %s\n' % (f, '\n    '.join(
+			[k for k, v in all_files.items() if v[0] == f]))) for f in dup]
+		return
 
 	dump_cleaned_cpp(in_file, out_file, ret, name_files)
 
@@ -368,6 +380,8 @@ def clean_ipp(base, in_file, out_file=None, out_folder='cipp'):
 
 	_LOG('done: ' + out_file)
 
+
+# region  ----------- LINE FUNC -----------
 
 def _build_lines(src_pre, file_pre, lines):
 	lines_i = [None for _ in lines]
@@ -438,6 +452,8 @@ def __assert_lino_max(ff, last_kdx, kdx_max, line_no, is_need):
 	), 'start not eq %d file: %s' % (last_kdx, ff)
 
 
+# endregion
+
 # noinspection PyUnresolvedReferences
 def do_clean_ipp(base_pre, src_pre, file_pre, lines, part_map):
 	lines_i = _build_lines(src_pre, file_pre, lines)
@@ -497,7 +513,7 @@ def do_clean_ipp(base_pre, src_pre, file_pre, lines, part_map):
 	return [i + "\n" for i in lines if i], out_map
 
 
-def sub_lines_of_part(file_pre, need_sub, lines_i, lines):
+def sub_lines_of_part(file_pre, need_sub, lines_i, lines, sub_main=False):
 	ff_map, nn_map = _build_ff_map(file_pre, lines_i)
 
 	kdx, len_, erase, last_nf, sub_lines = 0, len(lines), False, '', []
@@ -512,7 +528,9 @@ def sub_lines_of_part(file_pre, need_sub, lines_i, lines):
 		ff, line_no, line_ = item
 		kdx_max, line_max, nf = ff_map[ff] if ff in ff_map else (0, 0, '')
 		__assert_lino_max(ff, last_kdx, kdx_max, line_no, nf == need_sub)
-		lines[last_kdx] = line_ if ff == file_pre else lines[last_kdx]
+
+		lines[last_kdx] = line_ if sub_main and ff == file_pre else lines[last_kdx]
+
 		if last_nf and nf != need_sub: break
 		if nf != need_sub: continue
 		sub_lines.append(lines[last_kdx])
@@ -525,6 +543,15 @@ def sub_lines_of_part(file_pre, need_sub, lines_i, lines):
 	return sub_lines
 
 
+# region  ----------- TEST FUNC -----------
+
+def _LOG(msg, handle=None):
+	print(msg, file=sys.stderr)
+	if handle:
+		handle.write(msg + '\n')
+		handle.flush()
+
+
 def all_test(test_pre='_test'):
 	globals_dict = globals()
 	for k, v in globals_dict.items():
@@ -534,9 +561,6 @@ def all_test(test_pre='_test'):
 				v()
 
 
-# ===============================================================
-# ========================== TEST FUNC ==========================
-# ===============================================================
 class Error(Exception):
 	pass
 
@@ -559,6 +583,8 @@ def _unittest(func, *cases):
 
 	return [_functest(func, *case) for case in cases]
 
+
+# endregion
 
 def main(action='clean_ipp', in_file='src/main.i', out_file=None):
 	action = sys.argv[1] if len(sys.argv) >= 2 else action
