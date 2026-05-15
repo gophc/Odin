@@ -598,7 +598,7 @@ func parse_build_flags(args []String) bool {
 								strStr := goStr(str)
 								if strStr != "?" {
 									type distanceAndTargetIndex struct {
-										distance     isize
+										distance    isize
 										targetIndex isize
 									}
 									distances := make([]distanceAndTargetIndex, len(named_targets))
@@ -1168,7 +1168,6 @@ func parse_build_flags(args []String) bool {
 			did_you_mean_flag(name)
 			bad_flags = true
 		}
-
 
 	}
 

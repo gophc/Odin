@@ -125,7 +125,7 @@ const (
 type BuildFlagParamKind int
 
 const (
-	BuildFlagParamNone    BuildFlagParamKind = iota
+	BuildFlagParamNone BuildFlagParamKind = iota
 	BuildFlagParamBoolean
 	BuildFlagParamInteger
 	BuildFlagParamFloat
@@ -146,9 +146,9 @@ const (
 )
 
 type StripSemicolonFile struct {
-	OldFullpath      string
+	OldFullpath       string
 	OldFullpathBackup string
-	NewFullpath      string
-	File             *AstFile
-	Written          int64
+	NewFullpath       string
+	File              *AstFile
+	Written           int64
 }

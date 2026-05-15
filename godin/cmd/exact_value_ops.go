@@ -259,18 +259,18 @@ func exact_binary_operator_value(op TokenKind, x_in, y_in ExactValue) ExactValue
 			return exact_value_quaternion(xr-yr, xi-yi, xj-yj, xk-yk)
 		case Token_Mul:
 			return exact_value_quaternion(
-				xr*yr - xi*yi - xj*yj - xk*yk,
-				xr*yi + xi*yr + xj*yk - xk*yj,
-				xr*yj - xi*yk + xj*yr + xk*yi,
-				xr*yk + xi*yj - xj*yi + xk*yr,
+				xr*yr-xi*yi-xj*yj-xk*yk,
+				xr*yi+xi*yr+xj*yk-xk*yj,
+				xr*yj-xi*yk+xj*yr+xk*yi,
+				xr*yk+xi*yj-xj*yi+xk*yr,
 			)
 		case Token_Quo:
 			invmag2 := 1.0 / (yr*yr + yi*yi + yj*yj + yk*yk)
 			return exact_value_quaternion(
-				(xr*+yr - xi*-yi - xj*-yj - xk*-yk) * invmag2,
-				(xr*-yi + xi*+yr + xj*-yk - xk*-yj) * invmag2,
-				(xr*-yj - xi*-yk + xj*+yr + xk*-yi) * invmag2,
-				(xr*-yk + xi*-yj - xj*-yi + xk*+yr) * invmag2,
+				(xr*+yr-xi*-yi-xj*-yj-xk*-yk)*invmag2,
+				(xr*-yi+xi*+yr+xj*-yk-xk*-yj)*invmag2,
+				(xr*-yj-xi*-yk+xj*+yr+xk*-yi)*invmag2,
+				(xr*-yk+xi*-yj-xj*-yi+xk*+yr)*invmag2,
 			)
 		default:
 			return EmptyExactValue

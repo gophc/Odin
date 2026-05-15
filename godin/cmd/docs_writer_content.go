@@ -131,7 +131,7 @@ func odin_doc_expr_string(w *OdinDocWriter, expr *Ast) OdinDocString {
 	s := write_expr_to_string(
 		gb_string_make(permanent_allocator(), ""),
 		expr,
-		build_context.cmd_doc_flags & CmdDocFlag_Short,
+		build_context.cmd_doc_flags&CmdDocFlag_Short,
 	)
 	return odin_doc_write_string(w, make_string_c(s))
 }

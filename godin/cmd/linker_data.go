@@ -2,14 +2,14 @@
 package cmd
 
 type LinkerData struct {
-	ForeignMutex               BlockingMutex
-	ForeignLibrariesSet        PtrSet[*Entity]
-	ForeignLibraries           []*Entity
-	OutputObjectPaths          []String
-	OutputTempPaths             []String
-	OutputBase                 String
-	OutputName                 String
-	NeedsSystemLibraryLinked   bool
+	ForeignMutex             BlockingMutex
+	ForeignLibrariesSet      PtrSet[*Entity]
+	ForeignLibraries         []*Entity
+	OutputObjectPaths        []String
+	OutputTempPaths          []String
+	OutputBase               String
+	OutputName               String
+	NeedsSystemLibraryLinked bool
 }
 
 func linker_enable_system_library_linking(ld *LinkerData) {

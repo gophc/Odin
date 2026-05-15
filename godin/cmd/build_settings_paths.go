@@ -390,5 +390,3 @@ func init_build_paths(init_filename String) bool {
 
 	return true
 }
-
-

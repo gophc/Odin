@@ -49,13 +49,13 @@ type Quaternion256 struct {
 }
 
 type ExactValue struct {
-	Kind          ExactValueKind
-	ValueBool     bool
-	ValueString   String
-	ValueInteger  BigInt
-	ValueFloat    float64
-	ValuePointer  int64
-	ValueComplex  *Complex128
+	Kind            ExactValueKind
+	ValueBool       bool
+	ValueString     String
+	ValueInteger    BigInt
+	ValueFloat      float64
+	ValuePointer    int64
+	ValueComplex    *Complex128
 	ValueQuaternion *Quaternion256
 	ValueCompound   *Ast
 	ValueProcedure  *Ast

@@ -108,43 +108,43 @@ const (
 )
 
 const (
-	OdinDocEntityFlagForeign         uint64 = 1 << 0
-	OdinDocEntityFlagExport          uint64 = 1 << 1
-	OdinDocEntityFlagParamUsing      uint64 = 1 << 2
-	OdinDocEntityFlagParamConst      uint64 = 1 << 3
-	OdinDocEntityFlagParamAutoCast   uint64 = 1 << 4
-	OdinDocEntityFlagParamEllipsis   uint64 = 1 << 5
-	OdinDocEntityFlagParamCVararg    uint64 = 1 << 6
-	OdinDocEntityFlagParamNoAlias    uint64 = 1 << 7
-	OdinDocEntityFlagParamAnyInt     uint64 = 1 << 8
-	OdinDocEntityFlagParamByPtr      uint64 = 1 << 9
-	OdinDocEntityFlagParamNoBroadcast uint64 = 1 << 10
-	OdinDocEntityFlagBitFieldField   uint64 = 1 << 19
-	OdinDocEntityFlagTypeAlias        uint64 = 1 << 20
+	OdinDocEntityFlagForeign              uint64 = 1 << 0
+	OdinDocEntityFlagExport               uint64 = 1 << 1
+	OdinDocEntityFlagParamUsing           uint64 = 1 << 2
+	OdinDocEntityFlagParamConst           uint64 = 1 << 3
+	OdinDocEntityFlagParamAutoCast        uint64 = 1 << 4
+	OdinDocEntityFlagParamEllipsis        uint64 = 1 << 5
+	OdinDocEntityFlagParamCVararg         uint64 = 1 << 6
+	OdinDocEntityFlagParamNoAlias         uint64 = 1 << 7
+	OdinDocEntityFlagParamAnyInt          uint64 = 1 << 8
+	OdinDocEntityFlagParamByPtr           uint64 = 1 << 9
+	OdinDocEntityFlagParamNoBroadcast     uint64 = 1 << 10
+	OdinDocEntityFlagBitFieldField        uint64 = 1 << 19
+	OdinDocEntityFlagTypeAlias            uint64 = 1 << 20
 	OdinDocEntityFlagBuiltinPkgBuiltin    uint64 = 1 << 30
 	OdinDocEntityFlagBuiltinPkgIntrinsics uint64 = 1 << 31
-	OdinDocEntityFlagVarThreadLocal   uint64 = 1 << 40
-	OdinDocEntityFlagVarStatic        uint64 = 1 << 41
-	OdinDocEntityFlagPrivate          uint64 = 1 << 50
+	OdinDocEntityFlagVarThreadLocal       uint64 = 1 << 40
+	OdinDocEntityFlagVarStatic            uint64 = 1 << 41
+	OdinDocEntityFlagPrivate              uint64 = 1 << 50
 )
 
 type OdinDocEntity struct {
-	Kind             OdinDocEntityKind
-	Reserved         uint32
-	Flags            uint64
-	Pos              OdinDocPosition
-	Name             OdinDocString
-	Type             OdinDocTypeIndex
-	InitString       OdinDocString
-	ReservedForInit  uint32
-	Comment          OdinDocString
-	Docs             OdinDocString
-	FieldGroupIndex  int32
-	ForeignLibrary   OdinDocEntityIndex
-	LinkName         OdinDocString
-	Attributes       OdinDocArray[OdinDocAttribute]
-	GroupedEntities  OdinDocArray[OdinDocEntityIndex]
-	WhereClauses     OdinDocArray[OdinDocString]
+	Kind            OdinDocEntityKind
+	Reserved        uint32
+	Flags           uint64
+	Pos             OdinDocPosition
+	Name            OdinDocString
+	Type            OdinDocTypeIndex
+	InitString      OdinDocString
+	ReservedForInit uint32
+	Comment         OdinDocString
+	Docs            OdinDocString
+	FieldGroupIndex int32
+	ForeignLibrary  OdinDocEntityIndex
+	LinkName        OdinDocString
+	Attributes      OdinDocArray[OdinDocAttribute]
+	GroupedEntities OdinDocArray[OdinDocEntityIndex]
+	WhereClauses    OdinDocArray[OdinDocString]
 }
 
 type OdinDocScopeEntry struct {

@@ -1,20 +1,21 @@
 // Depends on: common.odin, cmd_build_settings_types.go, cmd_parser_types.go, cmd_tokenizer_core.go
 // (build_context, BuildPath_Output, BuildPath_RC, BuildPath_RES, selected_target_metrics,
-//  selected_subtarget, subtarget_strings, Checker, AstPackage, AstFile, Parser, LoadedFile,
-//  LoadedFileError, LoadedFile_Empty, load_file_32, alloc_cstring, gbFile, gbFileError,
-//  gbFileError_None, gb_file_open_mode, gbFileMode_Write, gb_file_create, gb_file_close,
-//  gb_file_remove, gb_file_copy, gb_file_exists, gb_file_last_write_time, gbFileTime,
-//  gb_fprintf, gb_printf_err, gb_printf, gb_string_make, gb_string_make_reserve, gb_string_free,
-//  gb_string_append_length, gb_string_appendc, gb_string_append_fmt, gb_string_length, gbString,
-//  heap_allocator, permanent_allocator, temporary_allocator,
-//  string_to_string16, make_string16_c, string16_to_string, alloc_wstring,
-//  path_to_string, concatenate_strings, concatenate3_strings, substring, string_trim_whitespace,
-//  string_starts_with, string_compare, string_split_iterator, string_index_byte,
-//  exact_value_to_u64, exact_value_integer_from_string,
-//  array_make, array_add, array_sort, array_free, Array,
-//  String, String16, isize, i64, u32, u8, u16, isize,
-//  debugf, gb__defer_func, FileInfo,
-//  String_Iterator, ReadDirectoryError, ReadDirectory_*)
+//
+//	selected_subtarget, subtarget_strings, Checker, AstPackage, AstFile, Parser, LoadedFile,
+//	LoadedFileError, LoadedFile_Empty, load_file_32, alloc_cstring, gbFile, gbFileError,
+//	gbFileError_None, gb_file_open_mode, gbFileMode_Write, gb_file_create, gb_file_close,
+//	gb_file_remove, gb_file_copy, gb_file_exists, gb_file_last_write_time, gbFileTime,
+//	gb_fprintf, gb_printf_err, gb_printf, gb_string_make, gb_string_make_reserve, gb_string_free,
+//	gb_string_append_length, gb_string_appendc, gb_string_append_fmt, gb_string_length, gbString,
+//	heap_allocator, permanent_allocator, temporary_allocator,
+//	string_to_string16, make_string16_c, string16_to_string, alloc_wstring,
+//	path_to_string, concatenate_strings, concatenate3_strings, substring, string_trim_whitespace,
+//	string_starts_with, string_compare, string_split_iterator, string_index_byte,
+//	exact_value_to_u64, exact_value_integer_from_string,
+//	array_make, array_add, array_sort, array_free, Array,
+//	String, String16, isize, i64, u32, u8, u16, isize,
+//	debugf, gb__defer_func, FileInfo,
+//	String_Iterator, ReadDirectoryError, ReadDirectory_*)
 package cmd
 
 import (

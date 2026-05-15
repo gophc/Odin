@@ -8,10 +8,10 @@ import (
 )
 
 var (
-	ntdll                         = windows.NewLazySystemDLL("ntdll.dll")
-	procRtlGetVersion             = ntdll.NewProc("RtlGetVersion")
-	kernel32                      = windows.NewLazySystemDLL("kernel32.dll")
-	procGetProductInfo            = kernel32.NewProc("GetProductInfo")
+	ntdll              = windows.NewLazySystemDLL("ntdll.dll")
+	procRtlGetVersion  = ntdll.NewProc("RtlGetVersion")
+	kernel32           = windows.NewLazySystemDLL("kernel32.dll")
+	procGetProductInfo = kernel32.NewProc("GetProductInfo")
 )
 
 type osVersionInfoExW struct {
@@ -28,14 +28,14 @@ type osVersionInfoExW struct {
 }
 
 type memoryStatusEx struct {
-	dwLength     uint32
-	dwMemoryLoad uint32
-	ullTotalPhys uint64
-	ullAvailPhys uint64
-	ullTotalPage uint64
-	ullAvailPage uint64
-	ullTotalVirtual uint64
-	ullAvailVirtual uint64
+	dwLength           uint32
+	dwMemoryLoad       uint32
+	ullTotalPhys       uint64
+	ullAvailPhys       uint64
+	ullTotalPage       uint64
+	ullAvailPage       uint64
+	ullTotalVirtual    uint64
+	ullAvailVirtual    uint64
 	ullExtendedVirtual uint64
 }
 
