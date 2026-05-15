@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"unsafe"
 )
 
 const (
@@ -10,11 +9,8 @@ const (
 	defaultDidYouMeanLimit        = 10
 )
 
-func gostr(s String) string {
-	if s.Len == 0 {
-		return ""
-	}
-	return unsafe.String(s.Data, int(s.Len))
+func gostr(s string) string {
+	return s
 }
 
 func print_usage_line(indent i32, format string, args ...any) {
@@ -25,8 +21,8 @@ func print_usage_line(indent i32, format string, args ...any) {
 	fmt.Println()
 }
 
-func usage(argv0 String, argv1 ...String) {
-	var av1 String
+func usage(argv0 string, argv1 ...string) {
+	var av1 string
 	if len(argv1) > 0 {
 		av1 = argv1[0]
 	}
@@ -56,8 +52,8 @@ func usage(argv0 String, argv1 ...String) {
 	print_usage_line(1, "e.g. `odin build -help` or `odin help build`")
 }
 
-func print_show_help(arg0 String, command String, optional_flag ...String) int {
-	var optFlag String
+func print_show_help(arg0 string, command string, optional_flag ...string) int {
+	var optFlag string
 	if len(optional_flag) > 0 {
 		optFlag = optional_flag[0]
 	}
@@ -69,10 +65,10 @@ func print_show_help(arg0 String, command String, optional_flag ...String) int {
 	cmd := gostr(command)
 	optFlagStr := gostr(optFlag)
 
-	if cmd == "help" && optFlag.Len != 0 && len(optFlagStr) > 0 && optFlagStr[0] != '-' {
+	if cmd == "help" && len(optFlag) != 0 && len(optFlagStr) > 0 && optFlagStr[0] != '-' {
 		command = optFlag
 		cmd = optFlagStr
-		optFlag = String{}
+		optFlag = ""
 		optFlagStr = ""
 	}
 
@@ -168,7 +164,7 @@ func print_show_help(arg0 String, command String, optional_flag ...String) int {
 			f := make_string_c(flag)
 			i := string_index_byte(f, ':')
 			if i >= 0 {
-				f.Len = i
+				f = f[:i]
 			}
 			if optFlagStr != gostr(f) {
 				return false
@@ -640,7 +636,7 @@ func print_show_help(arg0 String, command String, optional_flag ...String) int {
 			var i u32
 			for i = 1; i < Subtarget_COUNT; i++ {
 				name := subtarget_strings[i]
-				prefix := String{Data: unsafe.StringData("-subtarget:"), Len: isize(len("-subtarget:"))}
+				prefix := "-subtarget:"
 				help_string := concatenate_strings(temporary_allocator(), prefix, name)
 				print_usage_line(3, "%s", gostr(help_string))
 			}

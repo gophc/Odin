@@ -20,18 +20,18 @@ const (
 )
 
 var targetOsNames = []String{
-	{},
-	{Data: strData("windows"), Len: isize(len("windows"))},
-	{Data: strData("darwin"), Len: isize(len("darwin"))},
-	{Data: strData("linux"), Len: isize(len("linux"))},
-	{Data: strData("freebsd"), Len: isize(len("freebsd"))},
-	{Data: strData("openbsd"), Len: isize(len("openbsd"))},
-	{Data: strData("netbsd"), Len: isize(len("netbsd"))},
-	{Data: strData("haiku"), Len: isize(len("haiku"))},
-	{Data: strData("wasi"), Len: isize(len("wasi"))},
-	{Data: strData("js"), Len: isize(len("js"))},
-	{Data: strData("orca"), Len: isize(len("orca"))},
-	{Data: strData("freestanding"), Len: isize(len("freestanding"))},
+	"",
+	"windows",
+	"darwin",
+	"linux",
+	"freebsd",
+	"openbsd",
+	"netbsd",
+	"haiku",
+	"wasi",
+	"js",
+	"orca",
+	"freestanding",
 }
 
 type TargetArchKind uint16
@@ -49,14 +49,14 @@ const (
 )
 
 var targetArchNames = []String{
-	{},
-	{Data: strData("amd64"), Len: isize(len("amd64"))},
-	{Data: strData("i386"), Len: isize(len("i386"))},
-	{Data: strData("arm32"), Len: isize(len("arm32"))},
-	{Data: strData("arm64"), Len: isize(len("arm64"))},
-	{Data: strData("wasm32"), Len: isize(len("wasm32"))},
-	{Data: strData("wasm64p32"), Len: isize(len("wasm64p32"))},
-	{Data: strData("riscv64"), Len: isize(len("riscv64"))},
+	"",
+	"amd64",
+	"i386",
+	"arm32",
+	"arm64",
+	"wasm32",
+	"wasm64p32",
+	"riscv64",
 }
 
 type TargetEndianKind uint8
@@ -68,8 +68,8 @@ const (
 )
 
 var targetEndianNames = []String{
-	{Data: strData("little"), Len: isize(len("little"))},
-	{Data: strData("big"), Len: isize(len("big"))},
+	"little",
+	"big",
 }
 
 type TargetABIKind uint16
@@ -82,9 +82,9 @@ const (
 )
 
 var targetABINames = []String{
-	{},
-	{Data: strData("win64"), Len: isize(len("win64"))},
-	{Data: strData("sysv"), Len: isize(len("sysv"))},
+	"",
+	"win64",
+	"sysv",
 }
 
 type WindowsSubsystem uint8
@@ -105,17 +105,17 @@ const (
 )
 
 var windowsSubsystemNames = []String{
-	{},
-	{Data: strData("BOOT_APPLICATION"), Len: isize(len("BOOT_APPLICATION"))},
-	{Data: strData("CONSOLE"), Len: isize(len("CONSOLE"))},
-	{Data: strData("EFI_APPLICATION"), Len: isize(len("EFI_APPLICATION"))},
-	{Data: strData("EFI_BOOT_SERVICE_DRIVER"), Len: isize(len("EFI_BOOT_SERVICE_DRIVER"))},
-	{Data: strData("EFI_ROM"), Len: isize(len("EFI_ROM"))},
-	{Data: strData("EFI_RUNTIME_DRIVER"), Len: isize(len("EFI_RUNTIME_DRIVER"))},
-	{Data: strData("NATIVE"), Len: isize(len("NATIVE"))},
-	{Data: strData("POSIX"), Len: isize(len("POSIX"))},
-	{Data: strData("WINDOWS"), Len: isize(len("WINDOWS"))},
-	{Data: strData("WINDOWSCE"), Len: isize(len("WINDOWSCE"))},
+	"",
+	"BOOT_APPLICATION",
+	"CONSOLE",
+	"EFI_APPLICATION",
+	"EFI_BOOT_SERVICE_DRIVER",
+	"EFI_ROM",
+	"EFI_RUNTIME_DRIVER",
+	"NATIVE",
+	"POSIX",
+	"WINDOWS",
+	"WINDOWSCE",
 }
 
 type MicroarchFeatureList struct {
@@ -123,7 +123,7 @@ type MicroarchFeatureList struct {
 	Features  String
 }
 
-var ODIN_VERSION = String{Data: strData("dev-2026-05"), Len: isize(len("dev-2026-05"))}
+var ODIN_VERSION = "dev-2026-05"
 
 type TargetMetrics struct {
 	Os            TargetOsKind
@@ -148,10 +148,10 @@ const (
 )
 
 var subtargetStrings = []String{
-	{},
-	{Data: strData("iphone"), Len: isize(len("iphone"))},
-	{Data: strData("iphonesimulator"), Len: isize(len("iphonesimulator"))},
-	{Data: strData("android"), Len: isize(len("android"))},
+	"",
+	"iphone",
+	"iphonesimulator",
+	"android",
 }
 
 type QueryDataSetKind int
@@ -337,10 +337,10 @@ const (
 )
 
 var linkerChoices = []String{
-	{Data: strData("default"), Len: 7},
-	{Data: strData("lld"), Len: 3},
-	{Data: strData("radlink"), Len: 7},
-	{Data: strData("mold"), Len: 4},
+	"default",
+	"lld",
+	"radlink",
+	"mold",
 }
 
 type SourceCodeLocationInfo uint8
@@ -531,10 +531,10 @@ type MCFindData struct {
 	Filename       String
 }
 
-var WIN32_SEPARATOR_STRING = String{Data: strData("\\"), Len: 1}
-var NIX_SEPARATOR_STRING = String{Data: strData("/"), Len: 1}
+var WIN32_SEPARATOR_STRING = "\\"
+var NIX_SEPARATOR_STRING = "/"
 var SEPARATOR_STRING = WIN32_SEPARATOR_STRING
-var WASM_MODULE_NAME_SEPARATOR = String{Data: strData(".."), Len: 2}
+var WASM_MODULE_NAME_SEPARATOR = ".."
 
 var globalModulePathSet bool
 var globalModulePath String

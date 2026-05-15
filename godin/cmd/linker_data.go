@@ -24,18 +24,18 @@ func linker_data_init(ld *LinkerData, info *CheckerInfo, initFullpath String) {
 	ptr_set_init(&ld.ForeignLibrariesSet, 1024)
 	ld.NeedsSystemLibraryLinked = false
 
-	if build_context.out_filepath.Len == 0 {
+	if len(build_context.out_filepath) == 0 {
 		ld.OutputName = remove_directory_from_path(initFullpath)
 		ld.OutputName = remove_extension_from_path(ld.OutputName)
 		ld.OutputName = string_trim_whitespace(ld.OutputName)
-		if ld.OutputName.Len == 0 {
+		if len(ld.OutputName) == 0 {
 			ld.OutputName = info.InitScope.Pkg.Name
 		}
 		ld.OutputBase = ld.OutputName
 	} else {
 		ld.OutputName = build_context.out_filepath
 		ld.OutputName = string_trim_whitespace(ld.OutputName)
-		if ld.OutputName.Len == 0 {
+		if len(ld.OutputName) == 0 {
 			ld.OutputName = info.InitScope.Pkg.Name
 		}
 		pos := string_extension_position(ld.OutputName)

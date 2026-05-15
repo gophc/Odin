@@ -93,7 +93,7 @@ func print_doc_line(indent i32, data String) {
 	for i := i32(0); i < indent; i++ {
 		gb_printf("\t")
 	}
-	gb_file_write(gb_file_get_standard(gbFileStandard_Output), data.Data, data.Len)
+	gb_file_write(gb_file_get_standard(gbFileStandard_Output), unsafe.StringData(data), isize(len(data)))
 	gb_printf("\n")
 }
 
@@ -101,7 +101,7 @@ func print_doc_line_no_newline(indent i32, data String) {
 	for i := i32(0); i < indent; i++ {
 		gb_printf("\t")
 	}
-	gb_file_write(gb_file_get_standard(gbFileStandard_Output), data.Data, data.Len)
+	gb_file_write(gb_file_get_standard(gbFileStandard_Output), unsafe.StringData(data), isize(len(data)))
 }
 
 func print_doc_comment_group_string(indent i32, g *CommentGroup) bool {
@@ -111,7 +111,7 @@ func print_doc_comment_group_string(indent i32, g *CommentGroup) bool {
 	len_total := isize(0)
 	for i := isize(0); i < isize(len(g.List)); i++ {
 		comment := g.List[i].String
-		len_total += comment.Len
+		len_total += len(comment)
 		len_total += 1
 	}
 	if len_total <= isize(len(g.List)) {
@@ -121,20 +121,16 @@ func print_doc_comment_group_string(indent i32, g *CommentGroup) bool {
 	for i := isize(0); i < isize(len(g.List)); i++ {
 		comment := g.List[i].String
 		slash_slash := false
-		if comment.Len >= 2 && *comment.Data == '/' {
-			second := *(*u8)(unsafe.Pointer(uintptr(unsafe.Pointer(comment.Data)) + 1))
-			if second == '/' {
+		if len(comment) >= 2 && comment[0] == '/' {
+			if comment[1] == '/' {
 				slash_slash = true
-				comment.Data = (*u8)(unsafe.Pointer(uintptr(unsafe.Pointer(comment.Data)) + 2))
-				comment.Len -= 2
-			} else if second == '*' {
-				comment.Data = (*u8)(unsafe.Pointer(uintptr(unsafe.Pointer(comment.Data)) + 2))
-				comment.Len -= 4
+				comment = comment[2:]
+			} else if comment[1] == '*' {
+				comment = comment[2 : len(comment)-2]
 			}
 		}
-		if comment.Len > 0 && *comment.Data == ' ' {
-			comment.Data = (*u8)(unsafe.Pointer(uintptr(unsafe.Pointer(comment.Data)) + 1))
-			comment.Len -= 1
+		if len(comment) > 0 && comment[0] == ' ' {
+			comment = comment[1:]
 		}
 		if slash_slash {
 			if string_starts_with(comment, S("+")) {
@@ -149,10 +145,10 @@ func print_doc_comment_group_string(indent i32, g *CommentGroup) bool {
 			count += 1
 		} else {
 			pos := isize(0)
-			for pos < comment.Len {
+			for pos < len(comment) {
 				end := pos
-				for end < comment.Len {
-					if *(*u8)(unsafe.Pointer(uintptr(unsafe.Pointer(comment.Data)) + uintptr(end))) == '\n' {
+				for end < len(comment) {
+					if comment[end] == '\n' {
 						break
 					}
 					end++
@@ -160,13 +156,13 @@ func print_doc_comment_group_string(indent i32, g *CommentGroup) bool {
 				line := substring(comment, pos, end)
 				pos = end
 				trimmed_line := string_trim_whitespace(line)
-				if trimmed_line.Len == 0 {
+				if len(trimmed_line) == 0 {
 					if count == 0 {
 						continue
 					}
 				}
 				if string_starts_with(line, S("* ")) {
-					line = substring(line, 2, line.Len)
+					line = substring(line, 2, len(line))
 				}
 				print_doc_line(indent, line)
 				count += 1
@@ -280,7 +276,7 @@ func print_doc_package(info *CheckerInfo, pkg *AstPackage) {
 		}
 		gb_printf("\n")
 	}
-	if pkg.Fullpath.Len != 0 {
+	if len(pkg.Fullpath) != 0 {
 		gb_printf("\n")
 		gb_printf("\tfullpath:\n")
 		gb_printf("\t\t%s\n", goStr(pkg.Fullpath))
@@ -299,18 +295,18 @@ func generate_documentation(c *Checker) {
 		init_fullpath := c.Parser.InitFullpath
 		var output_name String
 		var output_base String
-		if build_context.out_filepath.Len == 0 {
+		if len(build_context.out_filepath) == 0 {
 			output_name = remove_directory_from_path(init_fullpath)
 			output_name = remove_extension_from_path(output_name)
 			output_name = string_trim_whitespace(output_name)
-			if output_name.Len == 0 {
+			if len(output_name) == 0 {
 				output_name = info.InitScope.Pkg.Name
 			}
 			output_base = output_name
 		} else {
 			output_name = build_context.out_filepath
 			output_name = string_trim_whitespace(output_name)
-			if output_name.Len == 0 {
+			if len(output_name) == 0 {
 				output_name = info.InitScope.Pkg.Name
 			}
 			pos := string_extension_position(output_name)

@@ -17,7 +17,7 @@ var targetWindowsI386 = TargetMetrics{
 	IntSize:       4,
 	MaxAlign:      16,
 	MaxSimdAlign:  16,
-	TargetTriplet: String{Data: strData("i386-pc-windows-msvc"), Len: isize(len("i386-pc-windows-msvc"))},
+	TargetTriplet: "i386-pc-windows-msvc",
 }
 
 var targetWindowsAmd64 = TargetMetrics{
@@ -27,7 +27,7 @@ var targetWindowsAmd64 = TargetMetrics{
 	IntSize:       8,
 	MaxAlign:      16,
 	MaxSimdAlign:  32,
-	TargetTriplet: String{Data: strData("x86_64-pc-windows-msvc"), Len: isize(len("x86_64-pc-windows-msvc"))},
+	TargetTriplet: "x86_64-pc-windows-msvc",
 }
 
 var targetLinuxI386 = TargetMetrics{
@@ -37,7 +37,7 @@ var targetLinuxI386 = TargetMetrics{
 	IntSize:       4,
 	MaxAlign:      16,
 	MaxSimdAlign:  16,
-	TargetTriplet: String{Data: strData("i386-pc-linux-gnu"), Len: isize(len("i386-pc-linux-gnu"))},
+	TargetTriplet: "i386-pc-linux-gnu",
 }
 
 var targetLinuxAmd64 = TargetMetrics{
@@ -47,7 +47,7 @@ var targetLinuxAmd64 = TargetMetrics{
 	IntSize:       8,
 	MaxAlign:      16,
 	MaxSimdAlign:  32,
-	TargetTriplet: String{Data: strData("x86_64-pc-linux-gnu"), Len: isize(len("x86_64-pc-linux-gnu"))},
+	TargetTriplet: "x86_64-pc-linux-gnu",
 }
 
 var targetLinuxArm64 = TargetMetrics{
@@ -57,7 +57,7 @@ var targetLinuxArm64 = TargetMetrics{
 	IntSize:       8,
 	MaxAlign:      16,
 	MaxSimdAlign:  32,
-	TargetTriplet: String{Data: strData("aarch64-linux-elf"), Len: isize(len("aarch64-linux-elf"))},
+	TargetTriplet: "aarch64-linux-elf",
 }
 
 var targetLinuxArm32 = TargetMetrics{
@@ -67,7 +67,7 @@ var targetLinuxArm32 = TargetMetrics{
 	IntSize:       4,
 	MaxAlign:      8,
 	MaxSimdAlign:  16,
-	TargetTriplet: String{Data: strData("arm-unknown-linux-gnueabihf"), Len: isize(len("arm-unknown-linux-gnueabihf"))},
+	TargetTriplet: "arm-unknown-linux-gnueabihf",
 }
 
 var targetLinuxRiscv64 = TargetMetrics{
@@ -77,7 +77,7 @@ var targetLinuxRiscv64 = TargetMetrics{
 	IntSize:       8,
 	MaxAlign:      16,
 	MaxSimdAlign:  32,
-	TargetTriplet: String{Data: strData("riscv64-linux-gnu"), Len: isize(len("riscv64-linux-gnu"))},
+	TargetTriplet: "riscv64-linux-gnu",
 }
 
 var targetDarwinAmd64 = TargetMetrics{
@@ -87,7 +87,7 @@ var targetDarwinAmd64 = TargetMetrics{
 	IntSize:       8,
 	MaxAlign:      16,
 	MaxSimdAlign:  32,
-	TargetTriplet: String{Data: strData("x86_64-apple-macosx"), Len: isize(len("x86_64-apple-macosx"))},
+	TargetTriplet: "x86_64-apple-macosx",
 }
 
 var targetDarwinArm64 = TargetMetrics{
@@ -97,7 +97,7 @@ var targetDarwinArm64 = TargetMetrics{
 	IntSize:       8,
 	MaxAlign:      16,
 	MaxSimdAlign:  32,
-	TargetTriplet: String{Data: strData("arm64-apple-macosx"), Len: isize(len("arm64-apple-macosx"))},
+	TargetTriplet: "arm64-apple-macosx",
 }
 
 var targetFreeBSDI386 = TargetMetrics{
@@ -107,7 +107,7 @@ var targetFreeBSDI386 = TargetMetrics{
 	IntSize:       4,
 	MaxAlign:      16,
 	MaxSimdAlign:  16,
-	TargetTriplet: String{Data: strData("i386-unknown-freebsd-elf"), Len: isize(len("i386-unknown-freebsd-elf"))},
+	TargetTriplet: "i386-unknown-freebsd-elf",
 }
 
 var targetFreeBSDAmd64 = TargetMetrics{
@@ -117,7 +117,7 @@ var targetFreeBSDAmd64 = TargetMetrics{
 	IntSize:       8,
 	MaxAlign:      16,
 	MaxSimdAlign:  32,
-	TargetTriplet: String{Data: strData("x86_64-unknown-freebsd-elf"), Len: isize(len("x86_64-unknown-freebsd-elf"))},
+	TargetTriplet: "x86_64-unknown-freebsd-elf",
 }
 
 var targetFreeBSDArm64 = TargetMetrics{
@@ -127,7 +127,7 @@ var targetFreeBSDArm64 = TargetMetrics{
 	IntSize:       8,
 	MaxAlign:      16,
 	MaxSimdAlign:  32,
-	TargetTriplet: String{Data: strData("aarch64-unknown-freebsd-elf"), Len: isize(len("aarch64-unknown-freebsd-elf"))},
+	TargetTriplet: "aarch64-unknown-freebsd-elf",
 }
 
 var targetOpenBSDAmd64 = TargetMetrics{
@@ -137,7 +137,7 @@ var targetOpenBSDAmd64 = TargetMetrics{
 	IntSize:       8,
 	MaxAlign:      16,
 	MaxSimdAlign:  32,
-	TargetTriplet: String{Data: strData("x86_64-unknown-openbsd-elf"), Len: isize(len("x86_64-unknown-openbsd-elf"))},
+	TargetTriplet: "x86_64-unknown-openbsd-elf",
 }
 
 var targetNetBSDAmd64 = TargetMetrics{
@@ -147,7 +147,7 @@ var targetNetBSDAmd64 = TargetMetrics{
 	IntSize:       8,
 	MaxAlign:      16,
 	MaxSimdAlign:  32,
-	TargetTriplet: String{Data: strData("x86_64-unknown-netbsd-elf"), Len: isize(len("x86_64-unknown-netbsd-elf"))},
+	TargetTriplet: "x86_64-unknown-netbsd-elf",
 }
 
 var targetNetBSDArm64 = TargetMetrics{
@@ -157,7 +157,7 @@ var targetNetBSDArm64 = TargetMetrics{
 	IntSize:       8,
 	MaxAlign:      16,
 	MaxSimdAlign:  32,
-	TargetTriplet: String{Data: strData("aarch64-unknown-netbsd-elf"), Len: isize(len("aarch64-unknown-netbsd-elf"))},
+	TargetTriplet: "aarch64-unknown-netbsd-elf",
 }
 
 var targetHaikuAmd64 = TargetMetrics{
@@ -167,7 +167,7 @@ var targetHaikuAmd64 = TargetMetrics{
 	IntSize:       8,
 	MaxAlign:      16,
 	MaxSimdAlign:  32,
-	TargetTriplet: String{Data: strData("x86_64-unknown-haiku"), Len: isize(len("x86_64-unknown-haiku"))},
+	TargetTriplet: "x86_64-unknown-haiku",
 }
 
 var targetFreestandingWasm32 = TargetMetrics{
@@ -177,7 +177,7 @@ var targetFreestandingWasm32 = TargetMetrics{
 	IntSize:       4,
 	MaxAlign:      8,
 	MaxSimdAlign:  16,
-	TargetTriplet: String{Data: strData("wasm32-freestanding-js"), Len: isize(len("wasm32-freestanding-js"))},
+	TargetTriplet: "wasm32-freestanding-js",
 }
 
 var targetJsWasm32 = TargetMetrics{
@@ -187,7 +187,7 @@ var targetJsWasm32 = TargetMetrics{
 	IntSize:       4,
 	MaxAlign:      8,
 	MaxSimdAlign:  16,
-	TargetTriplet: String{Data: strData("wasm32-js-js"), Len: isize(len("wasm32-js-js"))},
+	TargetTriplet: "wasm32-js-js",
 }
 
 var targetWasiWasm32 = TargetMetrics{
@@ -197,7 +197,7 @@ var targetWasiWasm32 = TargetMetrics{
 	IntSize:       4,
 	MaxAlign:      8,
 	MaxSimdAlign:  16,
-	TargetTriplet: String{Data: strData("wasm32-wasi-js"), Len: isize(len("wasm32-wasi-js"))},
+	TargetTriplet: "wasm32-wasi-js",
 }
 
 var targetOrcaWasm32 = TargetMetrics{
@@ -207,7 +207,7 @@ var targetOrcaWasm32 = TargetMetrics{
 	IntSize:       4,
 	MaxAlign:      8,
 	MaxSimdAlign:  16,
-	TargetTriplet: String{Data: strData("wasm32-wasi-js"), Len: isize(len("wasm32-wasi-js"))},
+	TargetTriplet: "wasm32-wasi-js",
 }
 
 var targetFreestandingWasm64p32 = TargetMetrics{
@@ -217,7 +217,7 @@ var targetFreestandingWasm64p32 = TargetMetrics{
 	IntSize:       8,
 	MaxAlign:      8,
 	MaxSimdAlign:  16,
-	TargetTriplet: String{Data: strData("wasm32-freestanding-js"), Len: isize(len("wasm32-freestanding-js"))},
+	TargetTriplet: "wasm32-freestanding-js",
 }
 
 var targetJsWasm64p32 = TargetMetrics{
@@ -227,7 +227,7 @@ var targetJsWasm64p32 = TargetMetrics{
 	IntSize:       8,
 	MaxAlign:      8,
 	MaxSimdAlign:  16,
-	TargetTriplet: String{Data: strData("wasm32-js-js"), Len: isize(len("wasm32-js-js"))},
+	TargetTriplet: "wasm32-js-js",
 }
 
 var targetWasiWasm64p32 = TargetMetrics{
@@ -237,7 +237,7 @@ var targetWasiWasm64p32 = TargetMetrics{
 	IntSize:       8,
 	MaxAlign:      8,
 	MaxSimdAlign:  16,
-	TargetTriplet: String{Data: strData("wasm32-wasi-js"), Len: isize(len("wasm32-wasi-js"))},
+	TargetTriplet: "wasm32-wasi-js",
 }
 
 var targetFreestandingAmd64SysV = TargetMetrics{
@@ -247,7 +247,7 @@ var targetFreestandingAmd64SysV = TargetMetrics{
 	IntSize:       8,
 	MaxAlign:      16,
 	MaxSimdAlign:  32,
-	TargetTriplet: String{Data: strData("x86_64-pc-none-gnu"), Len: isize(len("x86_64-pc-none-gnu"))},
+	TargetTriplet: "x86_64-pc-none-gnu",
 	ABI:           TargetABISysV,
 }
 
@@ -258,7 +258,7 @@ var targetFreestandingAmd64Win64 = TargetMetrics{
 	IntSize:       8,
 	MaxAlign:      16,
 	MaxSimdAlign:  32,
-	TargetTriplet: String{Data: strData("x86_64-pc-windows-msvc"), Len: isize(len("x86_64-pc-windows-msvc"))},
+	TargetTriplet: "x86_64-pc-windows-msvc",
 	ABI:           TargetABIWin64,
 }
 
@@ -269,7 +269,7 @@ var targetFreestandingAmd64Mingw = TargetMetrics{
 	IntSize:       8,
 	MaxAlign:      16,
 	MaxSimdAlign:  32,
-	TargetTriplet: String{Data: strData("x86_64-pc-windows-gnu"), Len: isize(len("x86_64-pc-windows-gnu"))},
+	TargetTriplet: "x86_64-pc-windows-gnu",
 	ABI:           TargetABIWin64,
 }
 
@@ -280,7 +280,7 @@ var targetFreestandingArm64 = TargetMetrics{
 	IntSize:       8,
 	MaxAlign:      16,
 	MaxSimdAlign:  32,
-	TargetTriplet: String{Data: strData("aarch64-none-elf"), Len: isize(len("aarch64-none-elf"))},
+	TargetTriplet: "aarch64-none-elf",
 }
 
 var targetFreestandingArm32 = TargetMetrics{
@@ -290,7 +290,7 @@ var targetFreestandingArm32 = TargetMetrics{
 	IntSize:       4,
 	MaxAlign:      8,
 	MaxSimdAlign:  16,
-	TargetTriplet: String{Data: strData("arm-unknown-unknown-gnueabihf"), Len: isize(len("arm-unknown-unknown-gnueabihf"))},
+	TargetTriplet: "arm-unknown-unknown-gnueabihf",
 }
 
 var targetFreestandingRiscv64 = TargetMetrics{
@@ -300,46 +300,46 @@ var targetFreestandingRiscv64 = TargetMetrics{
 	IntSize:       8,
 	MaxAlign:      16,
 	MaxSimdAlign:  32,
-	TargetTriplet: String{Data: strData("riscv64-unknown-gnu"), Len: isize(len("riscv64-unknown-gnu"))},
+	TargetTriplet: "riscv64-unknown-gnu",
 }
 
 var namedTargets = []NamedTargetMetrics{
-	{Name: String{Data: strData("darwin_amd64"), Len: isize(len("darwin_amd64"))}, Metrics: &targetDarwinAmd64},
-	{Name: String{Data: strData("darwin_arm64"), Len: isize(len("darwin_arm64"))}, Metrics: &targetDarwinArm64},
-	{Name: String{Data: strData("linux_i386"), Len: isize(len("linux_i386"))}, Metrics: &targetLinuxI386},
-	{Name: String{Data: strData("linux_amd64"), Len: isize(len("linux_amd64"))}, Metrics: &targetLinuxAmd64},
-	{Name: String{Data: strData("linux_arm64"), Len: isize(len("linux_arm64"))}, Metrics: &targetLinuxArm64},
-	{Name: String{Data: strData("linux_arm32"), Len: isize(len("linux_arm32"))}, Metrics: &targetLinuxArm32},
-	{Name: String{Data: strData("linux_riscv64"), Len: isize(len("linux_riscv64"))}, Metrics: &targetLinuxRiscv64},
-	{Name: String{Data: strData("windows_i386"), Len: isize(len("windows_i386"))}, Metrics: &targetWindowsI386},
-	{Name: String{Data: strData("windows_amd64"), Len: isize(len("windows_amd64"))}, Metrics: &targetWindowsAmd64},
-	{Name: String{Data: strData("freebsd_i386"), Len: isize(len("freebsd_i386"))}, Metrics: &targetFreeBSDI386},
-	{Name: String{Data: strData("freebsd_amd64"), Len: isize(len("freebsd_amd64"))}, Metrics: &targetFreeBSDAmd64},
-	{Name: String{Data: strData("freebsd_arm64"), Len: isize(len("freebsd_arm64"))}, Metrics: &targetFreeBSDArm64},
-	{Name: String{Data: strData("netbsd_amd64"), Len: isize(len("netbsd_amd64"))}, Metrics: &targetNetBSDAmd64},
-	{Name: String{Data: strData("netbsd_arm64"), Len: isize(len("netbsd_arm64"))}, Metrics: &targetNetBSDArm64},
-	{Name: String{Data: strData("openbsd_amd64"), Len: isize(len("openbsd_amd64"))}, Metrics: &targetOpenBSDAmd64},
-	{Name: String{Data: strData("haiku_amd64"), Len: isize(len("haiku_amd64"))}, Metrics: &targetHaikuAmd64},
-	{Name: String{Data: strData("freestanding_wasm32"), Len: isize(len("freestanding_wasm32"))}, Metrics: &targetFreestandingWasm32},
-	{Name: String{Data: strData("wasi_wasm32"), Len: isize(len("wasi_wasm32"))}, Metrics: &targetWasiWasm32},
-	{Name: String{Data: strData("js_wasm32"), Len: isize(len("js_wasm32"))}, Metrics: &targetJsWasm32},
-	{Name: String{Data: strData("orca_wasm32"), Len: isize(len("orca_wasm32"))}, Metrics: &targetOrcaWasm32},
-	{Name: String{Data: strData("freestanding_wasm64p32"), Len: isize(len("freestanding_wasm64p32"))}, Metrics: &targetFreestandingWasm64p32},
-	{Name: String{Data: strData("js_wasm64p32"), Len: isize(len("js_wasm64p32"))}, Metrics: &targetJsWasm64p32},
-	{Name: String{Data: strData("wasi_wasm64p32"), Len: isize(len("wasi_wasm64p32"))}, Metrics: &targetWasiWasm64p32},
-	{Name: String{Data: strData("freestanding_amd64_sysv"), Len: isize(len("freestanding_amd64_sysv"))}, Metrics: &targetFreestandingAmd64SysV},
-	{Name: String{Data: strData("freestanding_amd64_win64"), Len: isize(len("freestanding_amd64_win64"))}, Metrics: &targetFreestandingAmd64Win64},
-	{Name: String{Data: strData("freestanding_amd64_mingw"), Len: isize(len("freestanding_amd64_mingw"))}, Metrics: &targetFreestandingAmd64Mingw},
-	{Name: String{Data: strData("freestanding_arm64"), Len: isize(len("freestanding_arm64"))}, Metrics: &targetFreestandingArm64},
-	{Name: String{Data: strData("freestanding_arm32"), Len: isize(len("freestanding_arm32"))}, Metrics: &targetFreestandingArm32},
-	{Name: String{Data: strData("freestanding_riscv64"), Len: isize(len("freestanding_riscv64"))}, Metrics: &targetFreestandingRiscv64},
+	{Name: "darwin_amd64", Metrics: &targetDarwinAmd64},
+	{Name: "darwin_arm64", Metrics: &targetDarwinArm64},
+	{Name: "linux_i386", Metrics: &targetLinuxI386},
+	{Name: "linux_amd64", Metrics: &targetLinuxAmd64},
+	{Name: "linux_arm64", Metrics: &targetLinuxArm64},
+	{Name: "linux_arm32", Metrics: &targetLinuxArm32},
+	{Name: "linux_riscv64", Metrics: &targetLinuxRiscv64},
+	{Name: "windows_i386", Metrics: &targetWindowsI386},
+	{Name: "windows_amd64", Metrics: &targetWindowsAmd64},
+	{Name: "freebsd_i386", Metrics: &targetFreeBSDI386},
+	{Name: "freebsd_amd64", Metrics: &targetFreeBSDAmd64},
+	{Name: "freebsd_arm64", Metrics: &targetFreeBSDArm64},
+	{Name: "netbsd_amd64", Metrics: &targetNetBSDAmd64},
+	{Name: "netbsd_arm64", Metrics: &targetNetBSDArm64},
+	{Name: "openbsd_amd64", Metrics: &targetOpenBSDAmd64},
+	{Name: "haiku_amd64", Metrics: &targetHaikuAmd64},
+	{Name: "freestanding_wasm32", Metrics: &targetFreestandingWasm32},
+	{Name: "wasi_wasm32", Metrics: &targetWasiWasm32},
+	{Name: "js_wasm32", Metrics: &targetJsWasm32},
+	{Name: "orca_wasm32", Metrics: &targetOrcaWasm32},
+	{Name: "freestanding_wasm64p32", Metrics: &targetFreestandingWasm64p32},
+	{Name: "js_wasm64p32", Metrics: &targetJsWasm64p32},
+	{Name: "wasi_wasm64p32", Metrics: &targetWasiWasm64p32},
+	{Name: "freestanding_amd64_sysv", Metrics: &targetFreestandingAmd64SysV},
+	{Name: "freestanding_amd64_win64", Metrics: &targetFreestandingAmd64Win64},
+	{Name: "freestanding_amd64_mingw", Metrics: &targetFreestandingAmd64Mingw},
+	{Name: "freestanding_arm64", Metrics: &targetFreestandingArm64},
+	{Name: "freestanding_arm32", Metrics: &targetFreestandingArm32},
+	{Name: "freestanding_riscv64", Metrics: &targetFreestandingRiscv64},
 }
 
 func get_target_os_from_string(str String, subtarget_ *Subtarget, subtarget_str *String) TargetOsKind {
 	os_name := str
-	subtarget := String{}
+	subtarget := ""
 	part := string_partition(str, S(":"))
-	if part.Match.Len == 1 {
+	if len(part.Match) == 1 {
 		os_name = part.Head
 		subtarget = part.Tail
 	}
@@ -354,7 +354,7 @@ func get_target_os_from_string(str String, subtarget_ *Subtarget, subtarget_str 
 		*subtarget_str = subtarget
 	}
 	if subtarget_ != nil {
-		if subtarget.Len != 0 {
+		if len(subtarget) != 0 {
 			*subtarget_ = SubtargetInvalid
 			if str_eq_ignore_case(subtarget, S("generic")) || str_eq_ignore_case(subtarget, S("default")) {
 				*subtarget_ = SubtargetDefault
@@ -388,25 +388,25 @@ func is_excluded_target_filename(name String) bool {
 	if string_starts_with(name, S(".")) {
 		return true
 	}
-	str1 := String{}
-	str2 := String{}
+	str1 := ""
+	str2 := ""
 	n := isize(0)
 	str1 = name
-	n = str1.Len
-	for i := str1.Len - 1; i >= 0 && str1.Data[i] != '_'; i-- {
+	n = len(str1)
+	for i := len(str1) - 1; i >= 0 && str1[i] != '_'; i-- {
 		n--
 	}
-	str1 = substring(str1, n, str1.Len)
+	str1 = substring(str1, n, len(str1))
 	if n-1 > 0 {
 		str2 = substring(name, 0, n-1)
 	} else {
 		str2 = substring(name, 0, 0)
 	}
-	n = str2.Len
-	for i := str2.Len - 1; i >= 0 && str2.Data[i] != '_'; i-- {
+	n = len(str2)
+	for i := len(str2) - 1; i >= 0 && str2[i] != '_'; i-- {
 		n--
 	}
-	str2 = substring(str2, n, str2.Len)
+	str2 = substring(str2, n, len(str2))
 	if string_eq(str1, name) {
 		return false
 	}

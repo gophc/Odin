@@ -11,7 +11,10 @@
 //	path_remove_extension, substring, gbFileError, gbFileError_None)
 package cmd
 
-import "fmt"
+import (
+	"fmt"
+	"unsafe"
+)
 
 func bundle(init_directory String) i32 {
 	switch build_context.CommandKind {
@@ -28,7 +31,7 @@ func bundle_android(original_init_directory String) i32 {
 	init_directory_ok := false
 	init_directory := path_to_fullpath(temporary_allocator(), original_init_directory, &init_directory_ok)
 	if !init_directory_ok {
-		gb_printf_err("Error: '%.*s' is not a valid directory", len(original_init_directory.Text), original_init_directory.Text)
+		gb_printf_err("Error: '%.*s' is not a valid directory", len(original_init_directory), original_init_directory)
 		return 1
 	}
 	init_directory = normalize_path(temporary_allocator(), init_directory, NIX_SEPARATOR_STRING)
@@ -36,7 +39,7 @@ func bundle_android(original_init_directory String) i32 {
 	ODIN_ANDROID_API_LEVEL := build_context.ODINANDROIDAPIVALUE
 	android_sdk_build_tools := concatenate3_strings(temporary_allocator(),
 		build_context.ODINANDROIDSDK,
-		func() String { s := "build-tools"; return String{Text: s, Len: isize(len(s))} }(),
+		"build-tools",
 		NIX_SEPARATOR_STRING,
 	)
 
@@ -44,22 +47,22 @@ func bundle_android(original_init_directory String) i32 {
 	rd_err := read_directory(android_sdk_build_tools, &list)
 	switch rd_err {
 	case ReadDirectory_InvalidPath:
-		gb_printf_err("Invalid path: %.*s\n", len(android_sdk_build_tools.Text), android_sdk_build_tools.Text)
+		gb_printf_err("Invalid path: %.*s\n", len(android_sdk_build_tools), android_sdk_build_tools)
 		return 1
 	case ReadDirectory_NotExists:
-		gb_printf_err("Path does not exist: %.*s\n", len(android_sdk_build_tools.Text), android_sdk_build_tools.Text)
+		gb_printf_err("Path does not exist: %.*s\n", len(android_sdk_build_tools), android_sdk_build_tools)
 		return 1
 	case ReadDirectory_Permission:
-		gb_printf_err("Unknown error whilst reading path %.*s\n", len(android_sdk_build_tools.Text), android_sdk_build_tools.Text)
+		gb_printf_err("Unknown error whilst reading path %.*s\n", len(android_sdk_build_tools), android_sdk_build_tools)
 		return 1
 	case ReadDirectory_NotDir:
-		gb_printf_err("Expected a directory for a package, got a file: %.*s\n", len(android_sdk_build_tools.Text), android_sdk_build_tools.Text)
+		gb_printf_err("Expected a directory for a package, got a file: %.*s\n", len(android_sdk_build_tools), android_sdk_build_tools)
 		return 1
 	case ReadDirectory_Empty:
-		gb_printf_err("Empty directory: %.*s\n", len(android_sdk_build_tools.Text), android_sdk_build_tools.Text)
+		gb_printf_err("Empty directory: %.*s\n", len(android_sdk_build_tools), android_sdk_build_tools)
 		return 1
 	case ReadDirectory_Unknown:
-		gb_printf_err("Unknown error whilst reading path %.*s\n", len(android_sdk_build_tools.Text), android_sdk_build_tools.Text)
+		gb_printf_err("Unknown error whilst reading path %.*s\n", len(android_sdk_build_tools), android_sdk_build_tools)
 		return 1
 	}
 
@@ -69,8 +72,8 @@ func bundle_android(original_init_directory String) i32 {
 			continue
 		}
 		all_numbers := true
-		for i := isize(0); i < fi.name.Len; i++ {
-			c := fi.name.Text[i]
+		for i := 0; i < len(fi.name); i++ {
+			c := fi.name[i]
 			if '0' <= c && c <= '9' {
 				continue
 			}
@@ -90,18 +93,18 @@ func bundle_android(original_init_directory String) i32 {
 	}
 
 	if len(possible_valid_dirs) == 0 {
-		gb_printf_err("Unable to find any Android SDK/API Level in %.*s\n", len(android_sdk_build_tools.Text), android_sdk_build_tools.Text)
+		gb_printf_err("Unable to find any Android SDK/API Level in %.*s\n", len(android_sdk_build_tools), android_sdk_build_tools)
 		return 1
 	}
 
 	dir_numbers := make([]int, len(possible_valid_dirs))
 	for i, fi := range possible_valid_dirs {
-		n := int(fi.name.Len)
+		n := len(fi.name)
 		if n > 1023 {
 			n = 1023
 		}
 		buf := make([]byte, n)
-		copy(buf, fi.name.Text[:n])
+		copy(buf, fi.name[:n])
 		dir_numbers[i] = int(atoi(string(buf)))
 	}
 
@@ -115,7 +118,7 @@ func bundle_android(original_init_directory String) i32 {
 	}
 	if closest_number_idx < 0 {
 		gb_printf_err("Unable to find any Android SDK/API Level in %.*s meeting the minimum API level of %d\n",
-			len(android_sdk_build_tools.Text), android_sdk_build_tools.Text, ODIN_ANDROID_API_LEVEL)
+			len(android_sdk_build_tools), android_sdk_build_tools, ODIN_ANDROID_API_LEVEL)
 		return 1
 	}
 
@@ -124,7 +127,7 @@ func bundle_android(original_init_directory String) i32 {
 	apiLevelStr := fmt.Sprintf("platforms/android-%d/", dir_numbers[closest_number_idx])
 	android_sdk_platforms := concatenate_strings(temporary_allocator(),
 		build_context.ODINANDROIDSDK,
-		func() String { return String{Text: apiLevelStr, Len: isize(len(apiLevelStr))} }(),
+		apiLevelStr,
 	)
 
 	android_sdk_build_tools = normalize_path(temporary_allocator(), android_sdk_build_tools, NIX_SEPARATOR_STRING)
@@ -133,33 +136,33 @@ func bundle_android(original_init_directory String) i32 {
 	cmd := gb_string_make(heap_allocator(), "")
 	defer gb_string_free(cmd)
 
-	output_filename := func() String { s := "test"; return String{Text: s, Len: isize(len(s))} }()
+	output_filename := "test"
 	output_apk := path_remove_extension(output_filename)
 
 	{
 		debugf("[Section] %s\n", "Android aapt")
 		if build_context.show_more_timings {
-			timings_start_section(&global_timings, func() String { s := "Android aapt"; return String{Text: s, Len: isize(len(s))} }())
+			timings_start_section(&global_timings, "Android aapt")
 		}
 		gb_string_clear(cmd)
-		manifest := concatenate_strings(temporary_allocator(), init_directory, func() String { s := "AndroidManifest.xml"; return String{Text: s, Len: isize(len(s))} }())
-		cmd = gb_string_append_length(cmd, android_sdk_build_tools.Text, android_sdk_build_tools.Len)
+		manifest := concatenate_strings(temporary_allocator(), init_directory, "AndroidManifest.xml")
+		cmd = gb_string_append_length(cmd, unsafe.StringData(android_sdk_build_tools), len(android_sdk_build_tools))
 		cmd = gb_string_appendc(cmd, "aapt")
 		cmd = gb_string_appendc(cmd, " package -f")
-		cmd = gb_string_append_fmt(cmd, " -M \"%.*s\"", len(manifest.Text), manifest.Text)
-		cmd = gb_string_append_fmt(cmd, " -I \"%.*sandroid.jar\"", len(android_sdk_platforms.Text), android_sdk_platforms.Text)
-		cmd = gb_string_append_fmt(cmd, " -F \"%.*s.apk-build\"", len(output_apk.Text), output_apk.Text)
-		resources_dir := concatenate_strings(temporary_allocator(), init_directory, func() String { s := "res"; return String{Text: s, Len: isize(len(s))} }())
-		if gb_file_exists(func() string { return string(resources_dir.Text[:resources_dir.Len]) }()) {
-			cmd = gb_string_append_fmt(cmd, " -S \"%.*s\"", len(resources_dir.Text), resources_dir.Text)
+		cmd = gb_string_append_fmt(cmd, " -M \"%s\"", manifest)
+		cmd = gb_string_append_fmt(cmd, " -I \"%sandroid.jar\"", android_sdk_platforms)
+		cmd = gb_string_append_fmt(cmd, " -F \"%s.apk-build\"", output_apk)
+		resources_dir := concatenate_strings(temporary_allocator(), init_directory, "res")
+		if gb_file_exists(resources_dir) {
+			cmd = gb_string_append_fmt(cmd, " -S \"%s\"", resources_dir)
 		}
-		assets_dir := concatenate_strings(temporary_allocator(), init_directory, func() String { s := "assets"; return String{Text: s, Len: isize(len(s))} }())
-		if gb_file_exists(string(assets_dir.Text[:assets_dir.Len])) {
-			cmd = gb_string_append_fmt(cmd, " -A \"%.*s\"", len(assets_dir.Text), assets_dir.Text)
+		assets_dir := concatenate_strings(temporary_allocator(), init_directory, "assets")
+		if gb_file_exists(assets_dir) {
+			cmd = gb_string_append_fmt(cmd, " -A \"%s\"", assets_dir)
 		}
-		lib_dir := concatenate_strings(temporary_allocator(), init_directory, func() String { s := "lib"; return String{Text: s, Len: isize(len(s))} }())
-		if gb_file_exists(string(lib_dir.Text[:lib_dir.Len])) {
-			cmd = gb_string_append_fmt(cmd, " \"%.*s\"", len(lib_dir.Text), lib_dir.Text)
+		lib_dir := concatenate_strings(temporary_allocator(), init_directory, "lib")
+		if gb_file_exists(lib_dir) {
+			cmd = gb_string_append_fmt(cmd, " \"%s\"", lib_dir)
 		}
 		result = system_exec_command_line_app("android-aapt", cmd)
 		if result != 0 {
@@ -170,13 +173,13 @@ func bundle_android(original_init_directory String) i32 {
 	{
 		debugf("[Section] %s\n", "Android zipalign")
 		if build_context.show_more_timings {
-			timings_start_section(&global_timings, func() String { s := "Android zipalign"; return String{Text: s, Len: isize(len(s))} }())
+			timings_start_section(&global_timings, "Android zipalign")
 		}
 		gb_string_clear(cmd)
-		cmd = gb_string_append_length(cmd, android_sdk_build_tools.Text, android_sdk_build_tools.Len)
+		cmd = gb_string_append_length(cmd, unsafe.StringData(android_sdk_build_tools), len(android_sdk_build_tools))
 		cmd = gb_string_appendc(cmd, "zipalign")
 		cmd = gb_string_appendc(cmd, " -f 4")
-		cmd = gb_string_append_fmt(cmd, " \"%.*s.apk-build\" \"%.*s.apk\"", len(output_apk.Text), output_apk.Text, len(output_apk.Text), output_apk.Text)
+		cmd = gb_string_append_fmt(cmd, " \"%s.apk-build\" \"%s.apk\"", output_apk, output_apk)
 		result = system_exec_command_line_app("android-zipalign", cmd)
 		if result != 0 {
 			return result
@@ -186,22 +189,22 @@ func bundle_android(original_init_directory String) i32 {
 	{
 		debugf("[Section] %s\n", "Android apksigner")
 		if build_context.show_more_timings {
-			timings_start_section(&global_timings, func() String { s := "Android apksigner"; return String{Text: s, Len: isize(len(s))} }())
+			timings_start_section(&global_timings, "Android apksigner")
 		}
 		gb_string_clear(cmd)
-		cmd = gb_string_append_length(cmd, android_sdk_build_tools.Text, android_sdk_build_tools.Len)
+		cmd = gb_string_append_length(cmd, unsafe.StringData(android_sdk_build_tools), len(android_sdk_build_tools))
 		cmd = gb_string_appendc(cmd, "apksigner.bat")
 		cmd = gb_string_appendc(cmd, " sign")
 		keystore := normalize_path(temporary_allocator(), build_context.android_keystore, NIX_SEPARATOR_STRING)
-		keystore = substring(keystore, 0, keystore.Len-1)
-		cmd = gb_string_append_fmt(cmd, " --ks \"%.*s\"", len(keystore.Text), keystore.Text)
-		if build_context.android_keystore_alias.Len != 0 {
-			cmd = gb_string_append_fmt(cmd, " --ks-key-alias \"%.*s\"", len(build_context.android_keystore_alias.Text), build_context.android_keystore_alias.Text)
+		keystore = substring(keystore, 0, len(keystore)-1)
+		cmd = gb_string_append_fmt(cmd, " --ks \"%s\"", keystore)
+		if len(build_context.android_keystore_alias) != 0 {
+			cmd = gb_string_append_fmt(cmd, " --ks-key-alias \"%s\"", build_context.android_keystore_alias)
 		}
-		if build_context.android_keystore_password.Len != 0 {
-			cmd = gb_string_append_fmt(cmd, " --ks-pass pass:\"%.*s\"", len(build_context.android_keystore_password.Text), build_context.android_keystore_password.Text)
+		if len(build_context.android_keystore_password) != 0 {
+			cmd = gb_string_append_fmt(cmd, " --ks-pass pass:\"%s\"", build_context.android_keystore_password)
 		}
-		cmd = gb_string_append_fmt(cmd, " \"%.*s.apk\"", len(output_apk.Text), output_apk.Text)
+		cmd = gb_string_append_fmt(cmd, " \"%s.apk\"", output_apk)
 		result = system_exec_command_line_app("android-apksigner", cmd)
 		if result != 0 {
 			return result

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"strings"
-	"unsafe"
 )
 
 const DEFAULT_DID_YOU_MEAN_LIMIT isize = 10
@@ -38,7 +37,7 @@ func add_flag(build_flags *[]BuildFlag, kind BuildFlagKind, name string, param_k
 
 func build_param_to_exact_value(name String, param String) ExactValue {
 	var value ExactValue
-	if param.Len == 0 {
+	if len(param) == 0 {
 		gb_printf_err("Invalid flag parameter for '%s' = '%s'\n", goStr(name), goStr(param))
 		return value
 	}
@@ -48,7 +47,7 @@ func build_param_to_exact_value(name String, param String) ExactValue {
 	if str_eq_ignore_case(param, S("f")) || str_eq_ignore_case(param, S("false")) {
 		return exact_value_bool(false)
 	}
-	if param.Data[0] == '-' || param.Data[0] == '+' || (param.Data[0] >= '0' && param.Data[0] <= '9') {
+	if param[0] == '-' || param[0] == '+' || (param[0] >= '0' && param[0] <= '9') {
 		if string_contains_char(param, '.') {
 			value = exact_value_float_from_string(param)
 		} else {
@@ -59,10 +58,10 @@ func build_param_to_exact_value(name String, param String) ExactValue {
 		}
 	}
 	value = exact_value_string(param)
-	if param.Data[0] == '\'' && value.Kind == ExactValue_String {
+	if param[0] == '\'' && value.Kind == ExactValue_String {
 		s := value.Value_string
-		if s.Len > 1 && s.Data[0] == '\'' && s.Data[s.Len-1] == '\'' {
-			value.Value_string = substring(s, 1, s.Len-1)
+		if len(s) > 1 && s[0] == '\'' && s[len(s)-1] == '\'' {
+			value.Value_string = substring(s, 1, len(s)-1)
 		}
 	}
 	if value.Kind != ExactValue_String {
@@ -72,14 +71,11 @@ func build_param_to_exact_value(name String, param String) ExactValue {
 }
 
 func S(s string) String {
-	return String{Data: unsafe.StringData(s), Len: isize(len(s))}
+	return s
 }
 
 func goStr(s String) string {
-	if s.Data == nil {
-		return ""
-	}
-	return unsafe.String(s.Data, s.Len)
+	return s
 }
 
 func did_you_mean_flag(flag String) {
@@ -237,27 +233,27 @@ func parse_build_flags(args []String) bool {
 	bad_flags := false
 
 	for _, flag := range flag_args {
-		if flag.Len == 0 || flag.Data[0] != '-' {
+		if len(flag) == 0 || flag[0] != '-' {
 			gb_printf_err("Invalid flag: %s\n", goStr(flag))
 			continue
 		}
-		if flag.Len >= 2 && flag.Data[0] == '-' && flag.Data[1] == '-' {
-			flag = substring(flag, 1, flag.Len)
+		if len(flag) >= 2 && flag[0] == '-' && flag[1] == '-' {
+			flag = substring(flag, 1, len(flag))
 		}
-		name := substring(flag, 1, flag.Len)
+		name := substring(flag, 1, len(flag))
 		end := isize(0)
-		for ; end < name.Len; end++ {
-			if name.Data[end] == ':' {
+		for ; end < len(name); end++ {
+			if name[end] == ':' {
 				break
 			}
-			if name.Data[end] == '=' {
+			if name[end] == '=' {
 				break
 			}
 		}
 		name = substring(name, 0, end)
 		var param String
-		if end < flag.Len-1 {
-			param = substring(flag, 2+end, flag.Len)
+		if end < len(flag)-1 {
+			param = substring(flag, 2+end, len(flag))
 		}
 
 		is_supported := true
@@ -282,13 +278,13 @@ func parse_build_flags(args []String) bool {
 				var value ExactValue
 				ok := false
 				if bf.ParamKind == BuildFlagParamNone {
-					if param.Len == 0 {
+					if len(param) == 0 {
 						ok = true
 					} else {
 						gb_printf_err("Flag '%s' was not expecting a parameter '%s'\n", goStr(name), goStr(param))
 						bad_flags = true
 					}
-				} else if param.Len == 0 {
+				} else if len(param) == 0 {
 					gb_printf_err("Flag missing for '%s'\n", goStr(name))
 					bad_flags = true
 				} else {
@@ -297,9 +293,9 @@ func parse_build_flags(args []String) bool {
 					default:
 						ok = false
 					case BuildFlagParamBoolean:
-						if str_eq_ignore_case(param, S("t")) || str_eq_ignore_case(param, S("true")) || (param.Len == 1 && param.Data[0] == '1') {
+						if str_eq_ignore_case(param, S("t")) || str_eq_ignore_case(param, S("true")) || (len(param) == 1 && param[0] == '1') {
 							value = exact_value_bool(true)
-						} else if str_eq_ignore_case(param, S("f")) || str_eq_ignore_case(param, S("false")) || (param.Len == 1 && param.Data[0] == '0') {
+						} else if str_eq_ignore_case(param, S("f")) || str_eq_ignore_case(param, S("false")) || (len(param) == 1 && param[0] == '0') {
 							value = exact_value_bool(false)
 						} else {
 							gb_printf_err("Invalid flag parameter for '%s' : '%s'\n", goStr(name), goStr(param))
@@ -312,8 +308,8 @@ func parse_build_flags(args []String) bool {
 						value = exact_value_string(param)
 						if value.Kind == ExactValue_String {
 							s := value.Value_string
-							if s.Len > 1 && s.Data[0] == '"' && s.Data[s.Len-1] == '"' {
-								value.Value_string = substring(s, 1, s.Len-1)
+							if len(s) > 1 && s[0] == '"' && s[len(s)-1] == '"' {
+								value.Value_string = substring(s, 1, len(s)-1)
 							}
 						}
 					}
@@ -486,8 +482,8 @@ func parse_build_flags(args []String) bool {
 						case BuildFlagCollection:
 							str := value.Value_string
 							eq_pos := isize(-1)
-							for i := isize(0); i < str.Len; i++ {
-								if str.Data[i] == '=' {
+							for i := isize(0); i < len(str); i++ {
+								if str[i] == '=' {
 									eq_pos = i
 									break
 								}
@@ -498,8 +494,8 @@ func parse_build_flags(args []String) bool {
 								break
 							}
 							coll_name := substring(str, 0, eq_pos)
-							coll_path := substring(str, eq_pos+1, str.Len)
-							if coll_name.Len == 0 || coll_path.Len == 0 {
+							coll_path := substring(str, eq_pos+1, len(str))
+							if len(coll_name) == 0 || len(coll_path) == 0 {
 								gb_printf_err("Expected 'name=path', got '%s'\n", goStr(param))
 								bad_flags = true
 								break
@@ -543,8 +539,8 @@ func parse_build_flags(args []String) bool {
 						case BuildFlagDefine:
 							str := value.Value_string
 							eq_pos := isize(-1)
-							for i := isize(0); i < str.Len; i++ {
-								if str.Data[i] == '=' {
+							for i := isize(0); i < len(str); i++ {
+								if str[i] == '=' {
 									eq_pos = i
 									break
 								}
@@ -555,8 +551,8 @@ func parse_build_flags(args []String) bool {
 								break
 							}
 							def_name := substring(str, 0, eq_pos)
-							def_value := substring(str, eq_pos+1, str.Len)
-							if def_name.Len == 0 || def_value.Len == 0 {
+							def_value := substring(str, eq_pos+1, len(str))
+							if len(def_name) == 0 || len(def_value) == 0 {
 								gb_printf_err("Expected 'name=value', got '%s'\n", goStr(param))
 								bad_flags = true
 								break
@@ -791,7 +787,7 @@ func parse_build_flags(args []String) bool {
 								it := String_Iterator{Str: val, Pos: 0}
 								for {
 									pkg := string_split_iterator(&it, ',')
-									if pkg.Len == 0 {
+									if len(pkg) == 0 {
 										break
 									}
 									pkg = string_trim_whitespace(pkg)
@@ -809,7 +805,7 @@ func parse_build_flags(args []String) bool {
 								it := String_Iterator{Str: val, Pos: 0}
 								for {
 									attr := string_split_iterator(&it, ',')
-									if attr.Len == 0 {
+									if len(attr) == 0 {
 										break
 									}
 									attr = string_trim_whitespace(attr)
@@ -961,7 +957,7 @@ func parse_build_flags(args []String) bool {
 							build_context.min_link_libs = true
 						case BuildFlagExportLinkedLibraries:
 							build_context.export_linked_libs_path = string_trim_whitespace(value.Value_string)
-							if build_context.export_linked_libs_path.Len == 0 {
+							if len(build_context.export_linked_libs_path) == 0 {
 								gb_printf_err("-%s specified an empty path\n", goStr(name))
 								bad_flags = true
 							}
@@ -1176,10 +1172,10 @@ func parse_build_flags(args []String) bool {
 		bad_flags = true
 	}
 
-	if build_context.export_timings_format != TimingsExportUnspecified && build_context.export_timings_file.Len == 0 {
+	if build_context.export_timings_format != TimingsExportUnspecified && len(build_context.export_timings_file) == 0 {
 		gb_printf_err("`-export-timings:<format>` requires `-export-timings-file:<filename>` to be specified as well\n")
 		bad_flags = true
-	} else if build_context.export_timings_format == TimingsExportUnspecified && build_context.export_timings_file.Len > 0 {
+	} else if build_context.export_timings_format == TimingsExportUnspecified && len(build_context.export_timings_file) > 0 {
 		gb_printf_err("`-export-timings-file:<filename>` requires `-export-timings:<format>` to be specified as well\n")
 		bad_flags = true
 	}

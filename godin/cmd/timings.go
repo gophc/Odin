@@ -124,12 +124,12 @@ func timings_print_all(t *Timings, unit TimingUnit, timings_are_finalized bool) 
 	}
 
 	max_len := isize(36)
-	if t.Total.Label.Len > max_len {
-		max_len = t.Total.Label.Len
+	if len(t.Total.Label) > int(max_len) {
+		max_len = isize(len(t.Total.Label))
 	}
 	for _, ts := range t.Sections {
-		if ts.Label.Len > max_len {
-			max_len = ts.Label.Len
+		if len(ts.Label) > int(max_len) {
+			max_len = isize(len(ts.Label))
 		}
 	}
 	if !(max_len <= SPACES_LEN) {
@@ -139,18 +139,18 @@ func timings_print_all(t *Timings, unit TimingUnit, timings_are_finalized bool) 
 	t.TotalTimeSeconds = time_stamp_as_s(t.Total, t.Freq)
 	total_time := time_stamp(t.Total, t.Freq, unit)
 
-	gb_printf_err("%.*s%.*s - % 9.3f %s - %6.2f%%\n",
-		int(t.Total.Label.Len), t.Total.Label.Text,
-		int(max_len-t.Total.Label.Len), &SPACES[0],
+	gb_printf_err("%s%*s - % 9.3f %s - %6.2f%%\n",
+		t.Total.Label,
+		int(max_len)-len(t.Total.Label), "",
 		total_time,
 		timing_unit_strings[unit],
 		100.0)
 
 	for _, ts := range t.Sections {
 		section_time := time_stamp(ts, t.Freq, unit)
-		gb_printf_err("%.*s%.*s - % 9.3f %s - %6.2f%%\n",
-			int(ts.Label.Len), ts.Label.Text,
-			int(max_len-ts.Label.Len), &SPACES[0],
+		gb_printf_err("%s%*s - % 9.3f %s - %6.2f%%\n",
+			ts.Label,
+			int(max_len)-len(ts.Label), "",
 			section_time,
 			timing_unit_strings[unit],
 			100.0*section_time/total_time,

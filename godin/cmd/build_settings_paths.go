@@ -4,7 +4,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"unsafe"
 )
 
 func add_library_collection(name String, path String) {
@@ -29,7 +28,7 @@ func odin_root_dir() String {
 		return globalModulePath
 	}
 	found := gb_get_env("ODIN_ROOT", permanent_allocator())
-	if found.Len > 0 {
+	if len(found) > 0 {
 		path := path_to_fullpath(permanent_allocator(), found, nil)
 		path = normalize_path(permanent_allocator(), path, WIN32_SEPARATOR_STRING)
 		globalModulePath = path
@@ -45,16 +44,16 @@ func internal_odin_root_dir() String {
 	}
 	exe, err := os.Executable()
 	if err != nil {
-		return String{}
+		return ""
 	}
 	exePath := make_string(heap_allocator(), exe)
 	exePath = path_to_fullpath(heap_allocator(), exePath, nil)
-	for i := exePath.Len - 1; i >= 0; i-- {
-		c := *(*byte)(unsafe.Add(unsafe.Pointer(exePath.Data), i))
+	for len(exePath) > 0 {
+		c := exePath[len(exePath)-1]
 		if c == '/' || c == '\\' {
 			break
 		}
-		exePath.Len--
+		exePath = exePath[:len(exePath)-1]
 	}
 	globalModulePath = exePath
 	globalModulePathSet = true
@@ -68,7 +67,7 @@ func path_to_fullpath(a gbAllocator, s String, ok_ *bool) String {
 		if ok_ != nil {
 			*ok_ = false
 		}
-		return String{}
+		return ""
 	}
 	absPath = strings.ReplaceAll(absPath, "\\", "/")
 	if ok_ != nil {
@@ -150,7 +149,7 @@ func init_build_paths(init_filename String) bool {
 	}
 
 	if bc.Metrics.Os == TargetOsWindows {
-		if bc.ResourceFilepath.Len > 0 {
+		if len(bc.ResourceFilepath) > 0 {
 			bc.BuildPaths[BuildPathRES] = path_from_string(ha, bc.ResourceFilepath)
 			if !string_ends_with(bc.ResourceFilepath, S(".res")) {
 				bc.BuildPaths[BuildPathRES].Ext = copy_string(ha, S("res"))
@@ -164,28 +163,28 @@ func init_build_paths(init_filename String) bool {
 				gb_printf_err("Windows SDK not found.\n")
 				return false
 			}
-			if bc.LinkerChoice == LinkerDefault && find_result.VSExePath.Len == 0 {
+			if bc.LinkerChoice == LinkerDefault && len(find_result.VSExePath) == 0 {
 				gb_printf_err("link.exe not found.\n")
 				return false
 			}
-			if find_result.VSLibraryPath.Len == 0 {
+			if len(find_result.VSLibraryPath) == 0 {
 				gb_printf_err("VS library path not found.\n")
 				return false
 			}
-			if find_result.WindowsSDKUMLibraryPath.Len > 0 {
-				if find_result.WindowsSDKBinPath.Len > 0 {
+			if len(find_result.WindowsSDKUMLibraryPath) > 0 {
+				if len(find_result.WindowsSDKBinPath) > 0 {
 					bc.BuildPaths[BuildPathWinSDKBinPath] = path_from_string(ha, find_result.WindowsSDKBinPath)
 				}
-				if find_result.WindowsSDKUMLibraryPath.Len > 0 {
+				if len(find_result.WindowsSDKUMLibraryPath) > 0 {
 					bc.BuildPaths[BuildPathWinSDKUMLib] = path_from_string(ha, find_result.WindowsSDKUMLibraryPath)
 				}
-				if find_result.WindowsSDKUCRTLibraryPath.Len > 0 {
+				if len(find_result.WindowsSDKUCRTLibraryPath) > 0 {
 					bc.BuildPaths[BuildPathWinSDKUCRTLib] = path_from_string(ha, find_result.WindowsSDKUCRTLibraryPath)
 				}
-				if find_result.VSExePath.Len > 0 {
+				if len(find_result.VSExePath) > 0 {
 					bc.BuildPaths[BuildPathVSEXE] = path_from_string(ha, find_result.VSExePath)
 				}
-				if find_result.VSLibraryPath.Len > 0 {
+				if len(find_result.VSLibraryPath) > 0 {
 					bc.BuildPaths[BuildPathVSLIB] = path_from_string(ha, find_result.VSLibraryPath)
 				}
 			}
@@ -198,7 +197,7 @@ func init_build_paths(init_filename String) bool {
 	} else if is_arch_wasm() {
 		output_extension = S("wasm")
 	} else if bc.BuildMode == BuildModeExecutable {
-		output_extension = String{}
+		output_extension = ""
 		single_file_extension := S(".odin")
 		if selectedSubtarget == SubtargetAndroid {
 			output_extension = S("so")
@@ -229,14 +228,14 @@ func init_build_paths(init_filename String) bool {
 		output_extension = S("ll")
 	}
 
-	if bc.OutFilepath.Len > 0 {
+	if len(bc.OutFilepath) > 0 {
 		bc.BuildPaths[BuildPathOutput] = path_from_string(ha, bc.OutFilepath)
 		if bc.Metrics.Os == TargetOsWindows {
 			output_file := path_to_string(ha, bc.BuildPaths[BuildPathOutput])
 			if path_is_directory(bc.BuildPaths[BuildPathOutput]) {
 				gb_printf_err("Output path %s is a directory.\n", goStr(output_file))
 				return false
-			} else if bc.BuildPaths[BuildPathOutput].Ext.Len == 0 {
+			} else if len(bc.BuildPaths[BuildPathOutput].Ext) == 0 {
 				gb_printf_err("Output path %s must have an appropriate extension.\n", goStr(output_file))
 				return false
 			}
@@ -246,7 +245,7 @@ func init_build_paths(init_filename String) bool {
 		if str_eq(init_filename, S(".")) {
 			debugf("Output name will be created from current base name %s.\n", goStr(bc.BuildPaths[BuildPathMainPackage].Basename))
 			last_element := last_path_element(bc.BuildPaths[BuildPathMainPackage].Basename)
-			if last_element.Len == 0 {
+			if len(last_element) == 0 {
 				gb_printf_err("The output name is created from the last path element. `%s` has none. Use `-out:output_name.ext` to set it.\n", goStr(bc.BuildPaths[BuildPathMainPackage].Basename))
 				return false
 			}
@@ -254,10 +253,10 @@ func init_build_paths(init_filename String) bool {
 			output_path.Name = copy_string(ha, last_element)
 		} else {
 			output_name := init_filename
-			for output_name.Len > 0 {
-				c := *(*byte)(unsafe.Add(unsafe.Pointer(output_name.Data), output_name.Len-1))
+			for len(output_name) > 0 {
+				c := output_name[len(output_name)-1]
 				if c == '/' || c == '\\' {
-					output_name.Len--
+					output_name = output_name[:len(output_name)-1]
 				} else {
 					break
 				}
@@ -269,39 +268,36 @@ func init_build_paths(init_filename String) bool {
 			output_name = copy_string(ha, string_trim_whitespace(output_name))
 
 			var res Path
-			if output_name.Len > 0 {
+			if len(output_name) > 0 {
 				fullpath := path_to_fullpath(ha, output_name, nil)
 				res.Basename = directory_from_path(fullpath)
 				res.Basename = copy_string(ha, res.Basename)
 				if path_is_directory(fullpath) {
-					if res.Basename.Len > 0 {
-						c := *(*byte)(unsafe.Add(unsafe.Pointer(res.Basename.Data), res.Basename.Len-1))
-						if c == '/' {
-							res.Basename.Len--
-						}
+					if len(res.Basename) > 0 && res.Basename[len(res.Basename)-1] == '/' {
+						res.Basename = res.Basename[:len(res.Basename)-1]
 					}
 				} else {
 					name_start := isize(0)
-					if res.Basename.Len > 0 {
-						name_start = res.Basename.Len + 1
+					if len(res.Basename) > 0 {
+						name_start = len(res.Basename) + 1
 					}
-					res.Name = substring(fullpath, name_start, fullpath.Len)
+					res.Name = substring(fullpath, name_start, len(fullpath))
 					res.Name = copy_string(ha, res.Name)
 				}
 			}
 			output_path = res
-			if output_path.Name.Len == 0 {
-				l := output_path.Basename.Len
+			if len(output_path.Name) == 0 {
+				l := len(output_path.Basename)
 				for l > 1 {
-					c := *(*byte)(unsafe.Add(unsafe.Pointer(output_path.Basename.Data), l-1))
+					c := output_path.Basename[l-1]
 					if c == '/' {
 						break
 					}
 					l--
 				}
 				old_basename := output_path.Basename
-				output_path.Basename.Len = l - 1
-				output_path.Name = substring(old_basename, l, old_basename.Len)
+				output_path.Basename = old_basename[:l-1]
+				output_path.Name = old_basename[l:]
 				output_path.Basename = copy_string(ha, output_path.Basename)
 				output_path.Name = copy_string(ha, output_path.Name)
 			}
@@ -312,7 +308,7 @@ func init_build_paths(init_filename String) bool {
 
 	if bc.ODINDEBUG {
 		if bc.Metrics.Os == TargetOsWindows {
-			if bc.PdbFilepath.Len > 0 {
+			if len(bc.PdbFilepath) > 0 {
 				bc.BuildPaths[BuildPathSymbols] = path_from_string(ha, bc.PdbFilepath)
 			} else {
 				var symbol_path Path
@@ -330,7 +326,7 @@ func init_build_paths(init_filename String) bool {
 		}
 	}
 
-	if bc.BuildPaths[BuildPathOutput].Ext.Len == 0 {
+	if len(bc.BuildPaths[BuildPathOutput].Ext) == 0 {
 		if bc.Metrics.Os == TargetOsWindows || is_arch_wasm() || bc.BuildMode != BuildModeExecutable {
 			bc.BuildPaths[BuildPathOutput].Ext = copy_string(ha, output_extension)
 		}

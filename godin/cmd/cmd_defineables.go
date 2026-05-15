@@ -5,7 +5,6 @@ import (
 	"os"
 	"sort"
 	"strings"
-	"unsafe"
 )
 
 func check_defines(bc *BuildContext, c *Checker) {
@@ -20,7 +19,7 @@ func check_defines(bc *BuildContext, c *Checker) {
 		}
 
 		if !found {
-			warning(nil, "given -define:%s is unused in the project", unsafe.String(name.Data, name.Len))
+			warning(nil, "given -define:%s is unused in the project", name)
 
 			if !global_ignore_warnings() {
 				error_line("\tSuggestion: use the -show-defineables flag for an overview of the possible defines\n")
@@ -87,8 +86,8 @@ func export_defineables(c *Checker, path string) {
 		if def.Docs != nil {
 			docs.WriteString("\"")
 			for _, token := range def.Docs.List {
-				for i := 0; i < int(token.String.Len); i++ {
-					c := *(*byte)(unsafe.Add(token.String.Data, i))
+				for i := 0; i < len(token.String); i++ {
+					c := token.String[i]
 					if c == '"' {
 						docs.WriteString("\"\"")
 					} else {
@@ -100,10 +99,10 @@ func export_defineables(c *Checker, path string) {
 		}
 
 		fmt.Fprintf(f, "%s,%s,%s,%s\n",
-			unsafe.String(def.Name.Data, def.Name.Len),
-			unsafe.String(def.DefaultValueStr.Data, def.DefaultValueStr.Len),
+			def.Name,
+			def.DefaultValueStr,
 			docs.String(),
-			unsafe.String(def.PosStr.Data, def.PosStr.Len),
+			def.PosStr,
 		)
 	}
 }
@@ -113,18 +112,18 @@ func show_defineables(c *Checker) {
 		if has_ansi_terminal_colours() {
 			fmt.Printf("\x1b[0;90m")
 		}
-		fmt.Printf("%s\n", unsafe.String(def.PosStr.Data, def.PosStr.Len))
+		fmt.Printf("%s\n", def.PosStr)
 		if def.Docs != nil {
 			for _, token := range def.Docs.List {
-				fmt.Printf("%s\n", unsafe.String(token.String.Data, token.String.Len))
+				fmt.Printf("%s\n", token.String)
 			}
 		}
 		if has_ansi_terminal_colours() {
 			fmt.Printf("\x1b[0m")
 		}
 		fmt.Printf("%s :: %s\n\n",
-			unsafe.String(def.Name.Data, def.Name.Len),
-			unsafe.String(def.DefaultValueStr.Data, def.DefaultValueStr.Len),
+			def.Name,
+			def.DefaultValueStr,
 		)
 	}
 }
@@ -152,10 +151,10 @@ func print_show_unused(c *Checker) {
 		if e.Scope.Flags&(ScopeFlag_Pkg|ScopeFlag_File) == 0 {
 			continue
 		}
-		if e.Token.String.Len == 0 {
+		if e.Token.String == "" {
 			continue
 		}
-		if unsafe.String(e.Token.String.Data, e.Token.String.Len) == "_" {
+		if e.Token.String == "_" {
 			continue
 		}
 
@@ -178,7 +177,7 @@ func print_show_unused(c *Checker) {
 			currPkg = e.Pkg
 			currEntityKind = Entity_Invalid
 			print_usage_line(0, "")
-			print_usage_line(0, "package %s", unsafe.String(currPkg.Name.Data, currPkg.Name.Len))
+			print_usage_line(0, "package %s", currPkg.Name)
 		}
 		if currEntityKind != e.Kind {
 			currEntityKind = e.Kind
@@ -186,9 +185,9 @@ func print_show_unused(c *Checker) {
 		}
 		if build_context.show_unused_with_location {
 			pos := e.Token.Pos
-			print_usage_line(2, "%s %s", token_pos_to_string(pos), unsafe.String(e.Token.String.Data, e.Token.String.Len))
+			print_usage_line(2, "%s %s", token_pos_to_string(pos), e.Token.String)
 		} else {
-			print_usage_line(2, "%s", unsafe.String(e.Token.String.Data, e.Token.String.Len))
+			print_usage_line(2, "%s", e.Token.String)
 		}
 	}
 	print_usage_line(0, "")

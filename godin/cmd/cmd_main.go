@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"unsafe"
 )
 
 func stringJoinAndQuote(args []string) string {
@@ -35,11 +34,11 @@ func Main() int {
 
 	virtual_memory_init()
 
-	timings_init(&global_timings, String{Data: unsafe.StringData("Total Time"), Len: isize(len("Total Time"))}, 2048)
+	timings_init(&global_timings, "Total Time", 2048)
 	defer timings_destroy(&global_timings)
 
 	debugf("[Section] %s\n", "initialization")
-	timings_start_section(&global_timings, String{Data: unsafe.StringData("initialization"), Len: isize(len("initialization"))})
+	timings_start_section(&global_timings, "initialization")
 
 	init_string_interner()
 	init_global_error_collector()
@@ -52,7 +51,7 @@ func Main() int {
 
 	debugf("[Section] %s\n", "init default library collections")
 	if build_context.show_more_timings {
-		timings_start_section(&global_timings, String{Data: unsafe.StringData("init default library collections"), Len: isize(len("init default library collections"))})
+		timings_start_section(&global_timings, "init default library collections")
 	}
 	library_collections = make([]LibraryCollection, 0)
 
@@ -71,7 +70,7 @@ func Main() int {
 
 	debugf("[Section] %s\n", "init args")
 	if build_context.show_more_timings {
-		timings_start_section(&global_timings, String{Data: unsafe.StringData("init args"), Len: isize(len("init args"))})
+		timings_start_section(&global_timings, "init args")
 	}
 	build_context.defined_values = make(map[string]string)
 	build_context.extra_packages = []string{}
@@ -513,14 +512,14 @@ func Main() int {
 
 	debugf("[Section] %s\n", "init thread pool")
 	if build_context.show_more_timings {
-		timings_start_section(&global_timings, String{Data: unsafe.StringData("init thread pool"), Len: isize(len("init thread pool"))})
+		timings_start_section(&global_timings, "init thread pool")
 	}
 	init_global_thread_pool()
 	defer thread_pool_destroy(&globalThreadPool)
 
 	debugf("[Section] %s\n", "init universal")
 	if build_context.show_more_timings {
-		timings_start_section(&global_timings, String{Data: unsafe.StringData("init universal"), Len: isize(len("init universal"))})
+		timings_start_section(&global_timings, "init universal")
 	}
 	init_universal()
 
@@ -529,7 +528,7 @@ func Main() int {
 	failedToCacheParsing := false
 
 	debugf("[Section] %s\n", "parse files")
-	timings_start_section(&global_timings, String{Data: unsafe.StringData("parse files"), Len: isize(len("parse files"))})
+	timings_start_section(&global_timings, "parse files")
 
 	if !init_parser(parser) {
 		return 1
@@ -557,7 +556,7 @@ func Main() int {
 	if build_context.cached && parser.TotalSeenLoadDirectiveCount == 0 {
 		if build_context.show_more_timings {
 			debugf("[Section] %s\n", "check cached build (pre-semantic check)")
-			timings_start_section(&global_timings, String{Data: unsafe.StringData("check cached build (pre-semantic check)"), Len: isize(len("check cached build (pre-semantic check)"))})
+			timings_start_section(&global_timings, "check cached build (pre-semantic check)")
 		}
 		if try_cached_build(checker, args) {
 			cachedBuildSuccess = true
@@ -566,7 +565,7 @@ func Main() int {
 
 	if !cachedBuildSuccess {
 		debugf("[Section] %s\n", "type check")
-		timings_start_section(&global_timings, String{Data: unsafe.StringData("type check"), Len: isize(len("type check"))})
+		timings_start_section(&global_timings, "type check")
 
 		check_parsed_files(checker)
 		if !build_context.ignore_unused_defineables {
@@ -599,7 +598,7 @@ func Main() int {
 		if build_context.generate_docs {
 			if build_context.show_more_timings {
 				debugf("[Section] %s\n", "generate documentation")
-				timings_start_section(&global_timings, String{Data: unsafe.StringData("generate documentation"), Len: isize(len("generate documentation"))})
+				timings_start_section(&global_timings, "generate documentation")
 			}
 			if global_error_collector.count != 0 {
 				return 1
@@ -634,7 +633,7 @@ func Main() int {
 		if build_context.cached {
 			if build_context.show_more_timings {
 				debugf("[Section] %s\n", "check cached build")
-				timings_start_section(&global_timings, String{Data: unsafe.StringData("check cached build"), Len: isize(len("check cached build"))})
+				timings_start_section(&global_timings, "check cached build")
 			}
 			if try_cached_build(checker, args) {
 				cachedBuildSuccess = true
@@ -655,7 +654,7 @@ func Main() int {
 				labelCodeGen = fmt.Sprintf("%s ( %4d modules )", labelCodeGen, len(gen.Modules))
 			}
 			debugf("[Section] %s\n", labelCodeGen)
-			timings_start_section(&global_timings, String{Data: unsafe.StringData(labelCodeGen), Len: isize(len(labelCodeGen))})
+			timings_start_section(&global_timings, labelCodeGen)
 
 			if lb_generate_code(gen) {
 				switch build_context.build_mode {
@@ -699,7 +698,7 @@ func Main() int {
 	if build_context.cached {
 		if build_context.show_more_timings {
 			debugf("[Section] %s\n", "write cached build")
-			timings_start_section(&global_timings, String{Data: unsafe.StringData("write cached build"), Len: isize(len("write cached build"))})
+			timings_start_section(&global_timings, "write cached build")
 		}
 		if !build_context.build_cache_data.copy_already_done {
 			try_copy_executable_to_cache()
@@ -735,7 +734,7 @@ func Main() int {
 
 	if build_context.show_more_timings {
 		debugf("[Section] %s\n", "cleanup")
-		timings_start_section(&global_timings, String{Data: unsafe.StringData("cleanup"), Len: isize(len("cleanup"))})
+		timings_start_section(&global_timings, "cleanup")
 	}
 
 	return 0

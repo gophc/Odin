@@ -132,16 +132,16 @@ func odin_doc_get_item[T any](w *OdinDocWriter, t *OdinDocWriterItemTracker[T], 
 func odin_doc_write_string_without_cache(w *OdinDocWriter, str String) OdinDocString {
 	var res OdinDocString
 	if w.State == OdinDocWriterStatePreparing {
-		w.Strings.Cap += str.Len + 1
+		w.Strings.Cap += len(str) + 1
 	} else {
 		offset := w.Strings.Offset + w.Strings.Len
 		basePtr := unsafe.Pointer(&w.Data[0])
 		dataPtr := unsafe.Pointer(uintptr(basePtr) + uintptr(offset))
-		gb_memmove(dataPtr, unsafe.Pointer(str.Data), str.Len)
-		*(*byte)(unsafe.Pointer(uintptr(dataPtr) + uintptr(str.Len))) = 0
-		w.Strings.Len += str.Len + 1
+		gb_memmove(dataPtr, unsafe.Pointer(unsafe.StringData(str)), len(str))
+		*(*byte)(unsafe.Pointer(uintptr(dataPtr) + uintptr(len(str)))) = 0
+		w.Strings.Len += len(str) + 1
 		res.Offset = u32(offset)
-		res.Length = u32(str.Len)
+		res.Length = u32(len(str))
 	}
 	return res
 }
@@ -187,8 +187,6 @@ func from_array[T any](base *OdinDocHeaderBase, a OdinDocArray[T]) Slice[T] {
 }
 
 func from_string(base *OdinDocHeaderBase, s OdinDocString) String {
-	var str String
-	str.Data = (*byte)(unsafe.Pointer(uintptr(unsafe.Pointer(base)) + uintptr(s.Offset)))
-	str.Len = isize(s.Length)
-	return str
+	ptr := (*byte)(unsafe.Pointer(uintptr(unsafe.Pointer(base)) + uintptr(s.Offset)))
+	return unsafe.String(ptr, int(s.Length))
 }

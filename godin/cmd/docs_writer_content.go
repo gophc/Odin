@@ -150,7 +150,7 @@ func odin_doc_attributes(w *OdinDocWriter, attributes []*Ast) OdinDocArray[OdinD
 			continue
 		}
 		for _, elem := range attr.Attribute.Elems {
-			name := String{}
+			name := ""
 			var value *Ast
 			switch elem.Kind {
 			case Ast_Ident:
@@ -541,7 +541,7 @@ func odin_doc_add_entity(w *OdinDocWriter, e *Entity) OdinDocEntityIndex {
 		}
 	}
 	name := e.Token.String
-	link_name := String{}
+	link_name := ""
 	pos := e.Token.Pos
 	kind := OdinDocEntityInvalid
 	flags := uint64(0)
@@ -748,7 +748,7 @@ func odin_doc_add_pkg_entries(w *OdinDocWriter, pkg *AstPackage) OdinDocArray[Od
 		if !is_entity_exported(e, true) {
 			continue
 		}
-		if e.Token.String.Len == 0 {
+		if len(e.Token.String) == 0 {
 			continue
 		}
 		entry := OdinDocScopeEntry{

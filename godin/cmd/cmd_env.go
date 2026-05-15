@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"os"
-	"unsafe"
 
 	"golang.org/x/sys/windows"
 )
@@ -11,7 +10,7 @@ func check_env() bool {
 	debugf("[Section] %s\n", "init check env")
 	if build_context.show_more_timings {
 		s := "init check env"
-		timings_start_section(&global_timings, String{Data: unsafe.StringData(s), Len: isize(len(s))})
+		timings_start_section(&global_timings, s)
 	}
 
 	if odinRoot, ok := os.LookupEnv("ODIN_ROOT"); ok {
@@ -32,7 +31,7 @@ func init_terminal() {
 	debugf("[Section] %s\n", "init terminal")
 	if build_context.show_more_timings {
 		s := "init terminal"
-		timings_start_section(&global_timings, String{Data: unsafe.StringData(s), Len: isize(len(s))})
+		timings_start_section(&global_timings, s)
 	}
 
 	build_context.has_ansi_terminal_colours = false
@@ -58,8 +57,8 @@ func init_terminal() {
 
 	if !build_context.has_ansi_terminal_colours {
 		if odinTerminal, ok := os.LookupEnv("ODIN_TERMINAL"); ok && odinTerminal != "" {
-			ot := String{Data: unsafe.StringData(odinTerminal), Len: isize(len(odinTerminal))}
-			ansi := String{Data: unsafe.StringData("ansi"), Len: isize(len("ansi"))}
+			ot := odinTerminal
+			ansi := "ansi"
 			if str_eq_ignore_case(ot, ansi) {
 				build_context.has_ansi_terminal_colours = true
 			}

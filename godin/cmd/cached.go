@@ -120,7 +120,7 @@ func recursively_delete_directory(path String) bool {
 }
 
 func try_clear_cache() bool {
-	return recursively_delete_directory(String{Text: ".odin-cache", Len: isize(len(".odin-cache"))})
+	return recursively_delete_directory(".odin-cache")
 }
 
 var gb_crc64_table [256]uint64
@@ -155,23 +155,22 @@ func check_if_exists_directory_otherwise_create(str String) bool {
 
 func try_copy_executable_cache_internal(to_cache bool) bool {
 	exe_name := path_to_string(heap_allocator(), build_context.build_paths[BuildPath_Output])
-	defer gb_free(heap_allocator(), exe_name.Text)
 
 	cache_name := gb_string_make(heap_allocator(), "")
 	defer gb_string_free(cache_name)
 
 	cache_dir := build_context.build_cache_data.cache_dir
-	cache_name = gb_string_append_length(cache_name, cache_dir.Text, cache_dir.Len)
+	cache_name = gb_string_append_length(cache_name, unsafe.StringData(cache_dir), len(cache_dir))
 	cache_name = gb_string_appendc(cache_name, "/")
 	cache_name = gb_string_appendc(cache_name, "cached-exe")
 	if selected_target_metrics != nil {
 		cache_name = gb_string_appendc(cache_name, "-")
-		cache_name = gb_string_append_length(cache_name, selected_target_metrics.name.Text, selected_target_metrics.name.Len)
+		cache_name = gb_string_append_length(cache_name, unsafe.StringData(selected_target_metrics.name), len(selected_target_metrics.name))
 	}
 	if selected_subtarget != 0 {
 		st := subtarget_strings[selected_subtarget]
 		cache_name = gb_string_appendc(cache_name, "-")
-		cache_name = gb_string_append_length(cache_name, st.Text, st.Len)
+		cache_name = gb_string_append_length(cache_name, unsafe.StringData(st), len(st))
 	}
 	cache_name = gb_string_appendc(cache_name, ".bin")
 
@@ -217,7 +216,7 @@ func cache_gather_files(c *Checker) []String {
 	}
 	if build_context.has_resource {
 		var res_path String
-		if build_context.build_paths[BuildPath_RC].Basename.Len == 0 {
+		if len(build_context.build_paths[BuildPath_RC].Basename) == 0 {
 			res_path = path_to_string(permanent_allocator(), build_context.build_paths[BuildPath_RES])
 		} else {
 			res_path = path_to_string(permanent_allocator(), build_context.build_paths[BuildPath_RC])
@@ -247,10 +246,10 @@ func cache_gather_envs() []String {
 
 	for p := envBlock; *p != 0; {
 		wstr := make_string16_c((*uint16)(unsafe.Pointer(p)))
-		p += uintptr(wstr.Len + 1)
+		p += uintptr(len(wstr) + 1)
 		str := string16_to_string(temporary_allocator(), wstr)
 		if strings.HasPrefix(
-			string(str.Text[:str.Len]),
+			str,
 			"CURR_DATE_TIME=",
 		) {
 			continue
@@ -270,18 +269,18 @@ func try_cached_build(c *Checker, args []String) bool {
 
 	var crc uint64 = 0
 	for _, path := range files {
-		crc = crc64_with_seed(unsafe.Pointer(&path.Text[0]), path.Len, crc)
+		crc = crc64_with_seed(unsafe.Pointer(unsafe.StringData(path)), len(path), crc)
 	}
 
 	base_cache_dir := build_context.build_paths[BuildPath_Output].Basename
-	base_cache_dir = concatenate_strings(permanent_allocator(), base_cache_dir, func() String { s := "/.odin-cache"; return String{Text: s, Len: isize(len(s))} }())
+	base_cache_dir = concatenate_strings(permanent_allocator(), base_cache_dir, "/.odin-cache")
 	check_if_exists_directory_otherwise_create(base_cache_dir)
 
 	crc_str := fmt.Sprintf("%016x", crc)
-	cache_dir := concatenate3_strings(permanent_allocator(), base_cache_dir, func() String { s := "/"; return String{Text: s, Len: isize(len(s))} }(), func() String { return String{Text: crc_str, Len: isize(len(crc_str))} }())
-	files_path := concatenate3_strings(permanent_allocator(), cache_dir, func() String { s := "/"; return String{Text: s, Len: isize(len(s))} }(), func() String { s := "files.manifest"; return String{Text: s, Len: isize(len(s))} }())
-	args_path := concatenate3_strings(permanent_allocator(), cache_dir, func() String { s := "/"; return String{Text: s, Len: isize(len(s))} }(), func() String { s := "args.manifest"; return String{Text: s, Len: isize(len(s))} }())
-	env_path := concatenate3_strings(permanent_allocator(), cache_dir, func() String { s := "/"; return String{Text: s, Len: isize(len(s))} }(), func() String { s := "env.manifest"; return String{Text: s, Len: isize(len(s))} }())
+	cache_dir := concatenate3_strings(permanent_allocator(), base_cache_dir, "/", crc_str)
+	files_path := concatenate3_strings(permanent_allocator(), cache_dir, "/", "files.manifest")
+	args_path := concatenate3_strings(permanent_allocator(), cache_dir, "/", "args.manifest")
+	env_path := concatenate3_strings(permanent_allocator(), cache_dir, "/", "env.manifest")
 
 	build_context.build_cache_data.cache_dir = cache_dir
 	build_context.build_cache_data.files_path = files_path
@@ -307,12 +306,12 @@ func try_cached_build(c *Checker, args []String) bool {
 		if file_err > LoadedFile_Empty {
 			return false
 		}
-		data := String{Text: (*uint8)(loaded_file.Data), Len: loaded_file.Size}
+		data := unsafe.String((*byte)(loaded_file.Data), loaded_file.Size)
 		it := String_Iterator{Str: data, Pos: 0}
 		file_count := isize(0)
-		for ; it.Pos < data.Len; file_count++ {
+		for ; it.Pos < len(data); file_count++ {
 			line := string_split_iterator(&it, '\n')
-			if line.Len == 0 {
+			if len(line) == 0 {
 				break
 			}
 			sep := string_index_byte(line, ' ')
@@ -320,7 +319,7 @@ func try_cached_build(c *Checker, args []String) bool {
 				return false
 			}
 			timestamp_str := substring(line, 0, sep)
-			path_str := substring(line, sep+1, line.Len)
+			path_str := substring(line, sep+1, len(line))
 			timestamp_str = string_trim_whitespace(timestamp_str)
 			path_str = string_trim_whitespace(path_str)
 			if int(file_count) >= len(files) {
@@ -346,13 +345,13 @@ func try_cached_build(c *Checker, args []String) bool {
 		if file_err > LoadedFile_Empty {
 			return false
 		}
-		data := String{Text: (*uint8)(loaded_file.Data), Len: loaded_file.Size}
+		data := unsafe.String((*byte)(loaded_file.Data), loaded_file.Size)
 		it := String_Iterator{Str: data, Pos: 0}
 		args_count := isize(0)
-		for ; it.Pos < data.Len; args_count++ {
+		for ; it.Pos < len(data); args_count++ {
 			line := string_split_iterator(&it, '\n')
 			line = string_trim_whitespace(line)
-			if line.Len == 0 {
+			if len(line) == 0 {
 				break
 			}
 			if int(args_count) >= len(args) {
@@ -370,13 +369,13 @@ func try_cached_build(c *Checker, args []String) bool {
 		if file_err > LoadedFile_Empty {
 			return false
 		}
-		data := String{Text: (*uint8)(loaded_file.Data), Len: loaded_file.Size}
+		data := unsafe.String((*byte)(loaded_file.Data), loaded_file.Size)
 		it := String_Iterator{Str: data, Pos: 0}
 		env_count := isize(0)
-		for ; it.Pos < data.Len; env_count++ {
+		for ; it.Pos < len(data); env_count++ {
 			line := string_split_iterator(&it, '\n')
 			line = string_trim_whitespace(line)
-			if line.Len == 0 {
+			if len(line) == 0 {
 				break
 			}
 			if int(env_count) >= len(envs) {
@@ -404,7 +403,7 @@ func write_cached_build(c *Checker, args []String) {
 			defer f.Close()
 			for _, path := range files {
 				ft := gb_file_last_write_time(alloc_cstring(temporary_allocator(), path))
-				fmt.Fprintf(f, "%d %.*s\n", ft, len(path.Text), string(path.Text[:path.Len]))
+				fmt.Fprintf(f, "%d %s\n", ft, path)
 			}
 		}
 	}
@@ -417,7 +416,7 @@ func write_cached_build(c *Checker, args []String) {
 			defer f.Close()
 			for _, arg := range args {
 				targ := string_trim_whitespace(arg)
-				fmt.Fprintf(f, "%.*s\n", len(targ.Text), string(targ.Text[:targ.Len]))
+				fmt.Fprintf(f, "%s\n", targ)
 			}
 		}
 	}
@@ -429,7 +428,7 @@ func write_cached_build(c *Checker, args []String) {
 		if err == nil {
 			defer f.Close()
 			for _, env := range envs {
-				fmt.Fprintf(f, "%.*s\n", len(env.Text), string(env.Text[:env.Len]))
+				fmt.Fprintf(f, "%s\n", env)
 			}
 		}
 	}

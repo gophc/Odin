@@ -1,6 +1,8 @@
 // Depends on: common.odin (String, String16, BigInt, Ast, Type, isize, i64, u64, f64, u8, u16, u32, uintptr)
 package cmd
 
+import "unsafe"
+
 type ExactValueKind int
 
 const (
@@ -73,7 +75,7 @@ func hashExactValue(v ExactValue) uintptr {
 	case ExactValueBool:
 		res = uintptr(gb_fnv32a(&v.ValueBool, isize(1)))
 	case ExactValueString:
-		res = uintptr(gb_fnv32a(v.ValueString.Text, v.ValueString.Len))
+		res = uintptr(gb_fnv32a(unsafe.StringData(v.ValueString), isize(len(v.ValueString))))
 	case ExactValueString16:
 		res = uintptr(gb_fnv32a(v.ValueString16.Text, v.ValueString16.Len*isize(2)))
 	case ExactValueInteger:

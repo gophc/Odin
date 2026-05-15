@@ -23,11 +23,11 @@ func linker_stage(gen *LinkerData) int32 {
 
 		for _, e := range gen.ForeignLibraries {
 			extraLinkerFlags := string_trim_whitespace(e.LibraryName.ExtraLinkerFlags)
-			if extraLinkerFlags.Len != 0 {
+			if len(extraLinkerFlags) != 0 {
 				libStrBuilder.WriteString(fmt.Sprintf(" %s", goStr(extraLinkerFlags)))
 			}
 			for _, lib := range e.LibraryName.Paths {
-				if lib.Len == 0 {
+				if len(lib) == 0 {
 					continue
 				}
 				if !string_ends_with(lib, S(".o")) {
@@ -103,10 +103,10 @@ func linker_stage(gen *LinkerData) int32 {
 		var linkSettings strings.Builder
 		linkSettings.Grow(256)
 
-		if build_context.build_paths[BuildPath_VS_LIB].Basename.Len > 0 {
+		if len(build_context.build_paths[BuildPath_VS_LIB].Basename) > 0 {
 			addPath := func(path String) {
-				if path.Data[path.Len-1] == '\\' {
-					path.Len--
+				if path[len(path)-1] == '\\' {
+					path = path[:len(path)-1]
 				}
 				linkSettings.WriteString(fmt.Sprintf(" /LIBPATH:\"%s\"", goStr(path)))
 			}
@@ -129,7 +129,7 @@ func linker_stage(gen *LinkerData) int32 {
 
 		for _, e := range gen.ForeignLibraries {
 			extraLinkerFlags := string_trim_whitespace(e.LibraryName.ExtraLinkerFlags)
-			if extraLinkerFlags.Len != 0 {
+			if len(extraLinkerFlags) != 0 {
 				libStr.WriteString(fmt.Sprintf(" %s", goStr(extraLinkerFlags)))
 			}
 			for _, lib := range e.LibraryName.Paths {
@@ -137,7 +137,7 @@ func linker_stage(gen *LinkerData) int32 {
 				libLowerStr := strings.ToLower(goStr(lib))
 				loweredStrings = append(loweredStrings, libLowerStr)
 				lib = S(libLowerStr)
-				if lib.Len == 0 {
+				if len(lib) == 0 {
 					continue
 				}
 				if has_asm_extension(lib) {
@@ -145,7 +145,7 @@ func linker_stage(gen *LinkerData) int32 {
 						asmFile := lib
 						var objFile String
 						tempDir := temporary_directory(temporary_allocator())
-						if tempDir.Len != 0 {
+						if len(tempDir) != 0 {
 							filename := filename_without_directory(asmFile)
 							var strBuilder strings.Builder
 							strBuilder.WriteString(goStr(tempDir))
@@ -190,7 +190,7 @@ func linker_stage(gen *LinkerData) int32 {
 			}
 		}
 
-		if build_context.build_paths[BuildPath_Symbols].Name.Len != 0 {
+		if len(build_context.build_paths[BuildPath_Symbols].Name) != 0 {
 			symbolPath := path_to_string(heap_allocator(), build_context.build_paths[BuildPath_Symbols])
 			linkSettings.WriteString(fmt.Sprintf(" /PDB:\"%s\"", goStr(symbolPath)))
 		}
@@ -255,7 +255,7 @@ func linker_stage(gen *LinkerData) int32 {
 			rcPath := quote_path(heap_allocator(), build_context.build_paths[BuildPath_RC])
 
 			if build_context.has_resource {
-				if build_context.build_paths[BuildPath_RC].Basename.Len == 0 {
+				if len(build_context.build_paths[BuildPath_RC].Basename) == 0 {
 					debugf("Using precompiled resource %s\n", goStr(resPath))
 				} else {
 					debugf("Compiling resource %s\n", goStr(resPath))
@@ -269,7 +269,7 @@ func linker_stage(gen *LinkerData) int32 {
 					}
 				}
 			} else {
-				resPath = String{}
+				resPath = ""
 			}
 
 			linkerName := S("link.exe")
@@ -332,14 +332,14 @@ func linker_stage(gen *LinkerData) int32 {
 
 		for _, e := range gen.ForeignLibraries {
 			extraLinkerFlags := string_trim_whitespace(e.LibraryName.ExtraLinkerFlags)
-			if extraLinkerFlags.Len != 0 {
+			if len(extraLinkerFlags) != 0 {
 				libStr.WriteString(fmt.Sprintf(" %s", goStr(extraLinkerFlags)))
 			}
 
 			if is_osx {
 				for _, lib := range e.LibraryName.Paths {
 					lib = string_trim_whitespace(lib)
-					if lib.Len == 0 {
+					if len(lib) == 0 {
 						continue
 					}
 					if string_ends_with(lib, S(".framework")) {
@@ -355,7 +355,7 @@ func linker_stage(gen *LinkerData) int32 {
 
 			for _, lib := range e.LibraryName.Paths {
 				lib = string_trim_whitespace(lib)
-				if lib.Len == 0 {
+				if len(lib) == 0 {
 					continue
 				}
 				if has_asm_extension(lib) {
@@ -365,7 +365,7 @@ func linker_stage(gen *LinkerData) int32 {
 					asmFile := lib
 					var objFile String
 					tempDir := temporary_directory(temporary_allocator())
-					if tempDir.Len != 0 {
+					if len(tempDir) != 0 {
 						filename := filename_without_directory(asmFile)
 						var strBuilder strings.Builder
 						strBuilder.WriteString(goStr(tempDir))

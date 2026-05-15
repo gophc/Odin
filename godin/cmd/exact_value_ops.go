@@ -282,10 +282,10 @@ func exact_binary_operator_value(op TokenKind, x_in, y_in ExactValue) ExactValue
 		}
 		sx := x.ValueString
 		sy := y.ValueString
-		length := sx.Len + sy.Len
+		length := isize(len(sx) + len(sy))
 		data := (*byte)(gb_alloc(permanent_allocator(), uintptr(length)))
-		gb_memmove(unsafe.Pointer(data), unsafe.Pointer(sx.Data), uintptr(sx.Len))
-		gb_memmove(unsafe.Pointer(uintptr(unsafe.Pointer(data))+uintptr(sx.Len)), unsafe.Pointer(sy.Data), uintptr(sy.Len))
+		gb_memmove(unsafe.Pointer(data), unsafe.StringData(sx), uintptr(len(sx)))
+		gb_memmove(unsafe.Pointer(uintptr(unsafe.Pointer(data))+uintptr(len(sx))), unsafe.StringData(sy), uintptr(len(sy)))
 		return exact_value_string(make_string(data, length))
 
 	case ExactValueString16:
@@ -351,15 +351,15 @@ func cmp_f64(a, b float64) int32 {
 // ---------------------------------------------------------------------------
 
 func string_eq(a, b String) bool {
-	if a.Len != b.Len {
+	if len(a) != len(b) {
 		return false
 	}
-	if a.Data == b.Data {
+	if a == b {
 		return true
 	}
-	for i := isize(0); i < a.Len; i++ {
-		ca := *(*byte)(unsafe.Add(unsafe.Pointer(a.Data), i))
-		cb := *(*byte)(unsafe.Add(unsafe.Pointer(b.Data), i))
+	for i := isize(0); i < isize(len(a)); i++ {
+		ca := a[i]
+		cb := b[i]
 		if ca != cb {
 			return false
 		}
@@ -368,14 +368,14 @@ func string_eq(a, b String) bool {
 }
 
 func string_compare(a, b String) int {
-	na, nb := int(a.Len), int(b.Len)
+	na, nb := len(a), len(b)
 	minLen := na
 	if nb < minLen {
 		minLen = nb
 	}
 	for i := 0; i < minLen; i++ {
-		ca := *(*byte)(unsafe.Add(unsafe.Pointer(a.Data), i))
-		cb := *(*byte)(unsafe.Add(unsafe.Pointer(b.Data), i))
+		ca := a[i]
+		cb := b[i]
 		if ca != cb {
 			if ca < cb {
 				return -1
@@ -621,18 +621,17 @@ func write_exact_value_to_string(str gbString, v ExactValue, string_limit ...isi
 
 	case ExactValueString:
 		s := quote_to_ascii(heap_allocator(), v.ValueString)
-		if s.Len <= limit {
-			str = gb_string_append_length(str, s.Data, s.Len)
+		if isize(len(s)) <= limit {
+			str = gb_string_append_length(str, unsafe.StringData(s), isize(len(s)))
 		} else {
 			n := limit / 5
 			if n < 1 {
 				n = 1
 			}
-			str = gb_string_append_length(str, s.Data, n)
-			str = gb_string_append_fmt(str, "\"..%d chars..\"", s.Len-2*n)
-			str = gb_string_append_length(str, (*byte)(unsafe.Add(unsafe.Pointer(s.Data), s.Len-n)), n)
+			str = gb_string_append_length(str, unsafe.StringData(s), n)
+			str = gb_string_append_fmt(str, "\"..%d chars..\"", isize(len(s))-2*n)
+			str = gb_string_append_length(str, (*byte)(unsafe.Add(unsafe.StringData(s), isize(len(s))-n)), n)
 		}
-		gb_free(heap_allocator(), unsafe.Pointer(s.Data))
 		return str
 
 	case ExactValueString16:

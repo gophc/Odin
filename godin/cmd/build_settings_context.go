@@ -43,7 +43,7 @@ func init_build_context(crossTarget *TargetMetrics, subtarget Subtarget) {
 		bc.ThreadCount = max(bc.Affinity.ThreadCount, 1)
 	}
 
-	bc.ODINVENDOR = String{Data: strData("odin"), Len: isize(len("odin"))}
+	bc.ODINVENDOR = "odin"
 	bc.ODINVERSION = ODIN_VERSION
 	bc.ODINROOT = odin_root_dir()
 	if bc.MaxErrorCount <= 0 {
@@ -119,7 +119,7 @@ func init_build_context(crossTarget *TargetMetrics, subtarget Subtarget) {
 	bc.MaxAlign = int64(metrics.MaxAlign)
 	bc.MaxSimdAlign = int64(metrics.MaxSimdAlign)
 
-	bc.LinkFlags = String{Data: strData(" "), Len: 1}
+	bc.LinkFlags = " "
 
 	if bc.DisableRedZone {
 		if is_arch_wasm() && bc.Metrics.Os == TargetOsFreestanding {
@@ -163,16 +163,16 @@ func init_build_context(crossTarget *TargetMetrics, subtarget Subtarget) {
 		case SubtargetIPhone:
 			switch metrics.Arch {
 			case TargetArchArm64:
-				bc.Metrics.TargetTriplet = String{Data: strData("arm64-apple-ios"), Len: isize(len("arm64-apple-ios"))}
+				bc.Metrics.TargetTriplet = "arm64-apple-ios"
 			default:
 				panic("Unknown architecture for -subtarget:iphone")
 			}
 		case SubtargetIPhoneSimulator:
 			switch metrics.Arch {
 			case TargetArchArm64:
-				bc.Metrics.TargetTriplet = String{Data: strData("arm64-apple-ios-simulator"), Len: isize(len("arm64-apple-ios-simulator"))}
+				bc.Metrics.TargetTriplet = "arm64-apple-ios-simulator"
 			case TargetArchAmd64:
-				bc.Metrics.TargetTriplet = String{Data: strData("x86_64-apple-ios-simulator"), Len: isize(len("x86_64-apple-ios-simulator"))}
+				bc.Metrics.TargetTriplet = "x86_64-apple-ios-simulator"
 			default:
 				panic("Unknown architecture for -subtarget:iphonesimulator")
 			}
@@ -180,16 +180,16 @@ func init_build_context(crossTarget *TargetMetrics, subtarget Subtarget) {
 	} else if metrics.Os == TargetOsLinux && subtarget == SubtargetAndroid {
 		switch metrics.Arch {
 		case TargetArchArm64:
-			bc.Metrics.TargetTriplet = String{Data: strData("aarch64-linux-android"), Len: isize(len("aarch64-linux-android"))}
+			bc.Metrics.TargetTriplet = "aarch64-linux-android"
 			bc.RelocMode = RelocModePIC
 		case TargetArchArm32:
-			bc.Metrics.TargetTriplet = String{Data: strData("armv7a-linux-androideabi"), Len: isize(len("armv7a-linux-androideabi"))}
+			bc.Metrics.TargetTriplet = "armv7a-linux-androideabi"
 			bc.RelocMode = RelocModePIC
 		case TargetArchAmd64:
-			bc.Metrics.TargetTriplet = String{Data: strData("x86_64-linux-android"), Len: isize(len("x86_64-linux-android"))}
+			bc.Metrics.TargetTriplet = "x86_64-linux-android"
 			bc.RelocMode = RelocModePIC
 		case TargetArchI386:
-			bc.Metrics.TargetTriplet = String{Data: strData("i686-linux-android"), Len: isize(len("i686-linux-android"))}
+			bc.Metrics.TargetTriplet = "i686-linux-android"
 			bc.RelocMode = RelocModePIC
 		default:
 			panic("Unknown architecture for -subtarget:android")
@@ -199,15 +199,15 @@ func init_build_context(crossTarget *TargetMetrics, subtarget Subtarget) {
 	if bc.Metrics.Os == TargetOsWindows {
 		switch bc.Metrics.Arch {
 		case TargetArchAmd64:
-			bc.LinkFlags = String{Data: strData("/machine:x64 "), Len: isize(len("/machine:x64 "))}
+			bc.LinkFlags = "/machine:x64 "
 		case TargetArchI386:
-			bc.LinkFlags = String{Data: strData("/machine:x86 "), Len: isize(len("/machine:x86 "))}
+			bc.LinkFlags = "/machine:x86 "
 		}
 	} else if bc.Metrics.Os == TargetOsDarwin {
 		bc.LinkFlags = concatenate3_strings(permanent_allocator(),
-			String{Data: strData("-target "), Len: isize(len("-target "))},
+			"-target ",
 			bc.Metrics.TargetTriplet,
-			String{Data: strData(" "), Len: 1})
+			" ")
 	} else if is_arch_wasm() {
 		linkFlags := gb_string_make(heap_allocator(), " ")
 		linkFlags = gb_string_appendc(linkFlags, "--stack-first ")
@@ -222,24 +222,24 @@ func init_build_context(crossTarget *TargetMetrics, subtarget Subtarget) {
 		bc.UseSeparateModules = false
 	}
 	if bc.Metrics.Arch == TargetArchRiscv64 && bc.CrossCompiling {
-		bc.LinkFlags = String{Data: strData("-target riscv64 "), Len: isize(len("-target riscv64 "))}
+		bc.LinkFlags = "-target riscv64 "
 	}
 
 	if metrics.Os == TargetOsDarwin {
 		if !bc.MinimumOSVersionStringGiven {
 			if subtarget == SubtargetDefault {
-				bc.MinimumOSVersionString = String{Data: strData("11.0.0"), Len: isize(len("11.0.0"))}
+				bc.MinimumOSVersionString = "11.0.0"
 			} else if subtarget == SubtargetIPhone || subtarget == SubtargetIPhoneSimulator {
-				bc.MinimumOSVersionString = String{Data: strData("17.4.0"), Len: isize(len("17.4.0"))}
+				bc.MinimumOSVersionString = "17.4.0"
 			}
 		}
 		bc.MinimumOSVersionString = normalize_minimum_os_version_string(bc.MinimumOSVersionString)
 		if subtarget == SubtargetIPhoneSimulator {
-			suffix := String{Data: strData("-simulator"), Len: isize(len("-simulator"))}
+			suffix := "-simulator"
 			if !string_ends_with(bc.Metrics.TargetTriplet, suffix) {
 				panic("string_ends_with(bc.metrics.target_triplet, suffix)")
 			}
-			prefix := substring(bc.Metrics.TargetTriplet, 0, bc.Metrics.TargetTriplet.Len-suffix.Len)
+			prefix := substring(bc.Metrics.TargetTriplet, 0, len(bc.Metrics.TargetTriplet)-len(suffix))
 			bc.Metrics.TargetTriplet = concatenate3_strings(permanent_allocator(), prefix, bc.MinimumOSVersionString, suffix)
 		} else {
 			bc.Metrics.TargetTriplet = concatenate_strings(permanent_allocator(), bc.Metrics.TargetTriplet, bc.MinimumOSVersionString)

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"sort"
-	"unsafe"
 )
 
 func timings_export_all(t *Timings, c *Checker, timings_are_finalized bool) {
@@ -15,7 +14,7 @@ func timings_export_all(t *Timings, c *Checker, timings_are_finalized bool) {
 
 	unit := TimingUnit_Millisecond
 
-	fileName := string(unsafe.Slice(build_context.export_timings_file.Data, build_context.export_timings_file.Len))
+	fileName := build_context.export_timings_file
 	f, err := os.Create(fileName)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to export timings to: %s\n", fileName)
@@ -57,12 +56,12 @@ func timings_export_all(t *Timings, c *Checker, timings_are_finalized bool) {
 		totalTime := time_stamp(t.Total, t.Freq, unit)
 
 		fmt.Fprintf(f, "\t\t{\"name\": \"%s\", \"millis\": %.3f},\n",
-			unsafe.String(t.Total.Label.Data, t.Total.Label.Len), totalTime)
+			t.Total.Label, totalTime)
 
 		for _, ts := range t.Sections {
 			sectionTime := time_stamp(ts, t.Freq, unit)
 			fmt.Fprintf(f, "\t\t{\"name\": \"%s\", \"millis\": %.3f},\n",
-				unsafe.String(ts.Label.Data, ts.Label.Len), sectionTime)
+				ts.Label, sectionTime)
 		}
 
 		fmt.Fprintf(f, "\t],\n")
@@ -73,12 +72,12 @@ func timings_export_all(t *Timings, c *Checker, timings_are_finalized bool) {
 		totalTime := time_stamp(t.Total, t.Freq, unit)
 
 		fmt.Fprintf(f, "\"%s\", %d\n",
-			unsafe.String(t.Total.Label.Data, t.Total.Label.Len), int(totalTime))
+			t.Total.Label, int(totalTime))
 
 		for _, ts := range t.Sections {
 			sectionTime := time_stamp(ts, t.Freq, unit)
 			fmt.Fprintf(f, "\"%s\", %d\n",
-				unsafe.String(ts.Label.Data, ts.Label.Len), int(sectionTime))
+				ts.Label, int(sectionTime))
 		}
 	}
 
@@ -150,7 +149,7 @@ func show_timings(c *Checker, t *Timings) {
 		{
 			var ts TimeStamp
 			for _, s := range t.Sections {
-				label := unsafe.String(s.Label.Data, s.Label.Len)
+				label := s.Label
 				if label == "parse files" {
 					ts = s
 					break
@@ -172,7 +171,7 @@ func show_timings(c *Checker, t *Timings) {
 			var ts TimeStamp
 			var tsEnd TimeStamp
 			for _, s := range t.Sections {
-				label := unsafe.String(s.Label.Data, s.Label.Len)
+				label := s.Label
 				if label == "type check" {
 					ts = s
 				}
@@ -283,7 +282,7 @@ func file_path_cmp(a, b *AstFile) int {
 }
 
 func export_dependencies(c *Checker) {
-	if build_context.export_dependencies_file.Len <= 0 {
+	if len(build_context.export_dependencies_file) <= 0 {
 		fmt.Fprintf(os.Stderr, "No dependency file specified with `-export-dependencies-file`\n")
 		exit_with_errors()
 		return
@@ -291,7 +290,7 @@ func export_dependencies(c *Checker) {
 
 	p := c.Parser
 
-	fileName := string(unsafe.Slice(build_context.export_dependencies_file.Data, build_context.export_dependencies_file.Len))
+	fileName := build_context.export_dependencies_file
 	f, err := os.Create(fileName)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to export dependencies to: %s\n", fileName)
@@ -367,7 +366,7 @@ func export_dependencies(c *Checker) {
 		fmt.Fprintf(f, "\t\"load_files\": [\n")
 
 		for i, cache := range loadFiles {
-			fmt.Fprintf(f, "\t\t\"%s\"", unsafe.String(cache.Path.Data, cache.Path.Len))
+			fmt.Fprintf(f, "\t\t\"%s\"", cache.Path)
 			if i+1 < len(loadFiles) {
 				fmt.Fprintf(f, ",")
 			}
@@ -381,7 +380,7 @@ func export_dependencies(c *Checker) {
 }
 
 func export_linked_libraries(gen *LinkerData) {
-	fileName := string(unsafe.Slice(build_context.export_linked_libs_path.Data, build_context.export_linked_libs_path.Len))
+	fileName := build_context.export_linked_libs_path
 	f, err := os.Create(fileName)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to export linked library list to: %s\n", fileName)
@@ -399,7 +398,7 @@ func export_linked_libraries(gen *LinkerData) {
 
 		for i := 0; i < len(e.LibraryName.Paths); i++ {
 			libPath := string_trim_whitespace(e.LibraryName.Paths[i])
-			if libPath.Len == 0 {
+			if len(libPath) == 0 {
 				continue
 			}
 
@@ -407,13 +406,13 @@ func export_linked_libraries(gen *LinkerData) {
 				continue
 			}
 
-			fmt.Fprintf(f, "%s\t", unsafe.String(libPath.Data, libPath.Len))
+			fmt.Fprintf(f, "%s\t", libPath)
 
 			ext := path_extension(libPath, false)
-			extA := String{Data: unsafe.StringData("a"), Len: isize(len("a"))}
-			extLib := String{Data: unsafe.StringData("lib"), Len: isize(len("lib"))}
-			extO := String{Data: unsafe.StringData("o"), Len: isize(len("o"))}
-			extObj := String{Data: unsafe.StringData("obj"), Len: isize(len("obj"))}
+			extA := "a"
+			extLib := "lib"
+			extO := "o"
+			extObj := "obj"
 			if str_eq_ignore_case(ext, extA) || str_eq_ignore_case(ext, extLib) ||
 				str_eq_ignore_case(ext, extO) || str_eq_ignore_case(ext, extObj) {
 				fmt.Fprintf(f, "static")
@@ -425,7 +424,7 @@ func export_linked_libraries(gen *LinkerData) {
 
 			filePath := imp.Filepaths[i]
 			filePathStr := filePath.Tav.Value.ValueString
-			systemPrefix := String{Data: unsafe.StringData("system:"), Len: isize(len("system:"))}
+			systemPrefix := "system:"
 
 			if string_starts_with(filePathStr, systemPrefix) {
 				fmt.Fprintf(f, "system")
@@ -450,7 +449,7 @@ func remove_temp_files(gen *lbGenerator) {
 		return
 	}
 
-	timings_start_section(&global_timings, String{Data: unsafe.StringData("remove temp files"), Len: isize(len("remove temp files"))})
+	timings_start_section(&global_timings, "remove temp files")
 	defer timings__stop_current_section(&global_timings)
 
 	for _, path := range gen.OutputTempPaths {
