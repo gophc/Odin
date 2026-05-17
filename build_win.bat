@@ -231,14 +231,15 @@ def list_dir_by_name(str_dir, filter_func=None, encoding=None, skips=None):
 		return {}
 
 	filter_func = filter_func if hasattr(filter_func, '__call__') else lambda f, n: True
-	path_files, name_files, _path_files = {}, {}, _listdir(_str_dir, filter_func, skips)
+	path_files, name_files, stat_files, _path_files = {}, {}, {}, _listdir(_str_dir, filter_func, skips)
 	for n_full_name, n_file_name in _path_files.items():
-		stat = os.stat(n_full_name)
 		_full_name = n_full_name.decode(encoding) if encoding else n_full_name
 		_file_name = n_file_name.decode(encoding) if encoding else n_file_name
-		path_files[_full_name] = [_file_name, stat]
-		name_files[_file_name] = [_full_name, stat]
-	return path_files, name_files
+		path_files[_full_name] = _file_name
+		name_files[_file_name] = _full_name
+		stat = os.stat(n_full_name)
+		stat_files[_full_name] = stat
+	return path_files, name_files, stat_files
 
 
 def dump_cleaned_cpp(in_file, out_file, lines, name_files=None):
@@ -361,23 +362,24 @@ def clean_ipp(base, in_file, out_file=None, out_folder='cipp'):
 		'parser.hpp': [], 'checker.hpp': ['checker_builtin_procs.hpp'],
 	} if 'main.' in in_file else {}
 
-	all_files, name_files = list_dir_by_name(out_dir, lambda f, n: '.i.' in n)
+	all_files, name_files, stat_files = list_dir_by_name(out_dir, lambda f, n: '.i.' in n)
 
 	lines = fix_and_get_lines(in_file, out_file.replace('.cpp', '.tmp'))
 	ret, sub_map = do_clean_ipp(base_pre, src_pre, file_pre, lines, part_map)
 
 	if len(all_files) != len(name_files):
-		dup = [v[0] for k, v in all_files.items() if k not in {f[0]:n for n, f in name_files.items()}]
+		less = {f:n for n, f in name_files.items()}
+		dup = [v for k, v in all_files.items() if k not in less]
 		_LOG('list_dir not eq %d => %d :' % (len(all_files), len(name_files)))
 		[_LOG('  %s :\n    %s\n' % (f, '\n    '.join(
-			[k for k, v in all_files.items() if v[0] == f]))) for f in dup]
+			[k for k, v in all_files.items() if v == f]))) for f in dup]
 		return
 
-	dump_cleaned_cpp(in_file, out_file, ret, name_files)
-
+	info_files = {k: [v, stat_files[v]] for k, v in name_files.items()}
+	dump_cleaned_cpp(in_file, out_file, ret, info_files)
 	for part_name, lines in sub_map.items():
 		part_file = os.path.join(os.path.dirname(out_file), _out_name(part_name))
-		dump_cleaned_part_cpp(in_file, part_file, lines, name_files)
+		dump_cleaned_part_cpp(in_file, part_file, lines, info_files)
 
 	_LOG('done: ' + out_file)
 
