@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gophc/gophc/gophc-core/internal/zip"
+	"github.com/gophc/Odin/godin/internal/zip"
 )
 
 //goland:noinspection GoUnhandledErrorResult

@@ -16,8 +16,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gophc/gophc/gophc-core/internal/zip"
-	"github.com/gophc/gophc/gophc-core/util/xxhash"
+	"github.com/gophc/Odin/godin/internal/zip"
+	"github.com/gophc/Odin/godin/util/xxhash"
 )
 
 var testWindowSizes = []int{MinWindowSize, 1 << 16, 1 << 22, 1 << 24}

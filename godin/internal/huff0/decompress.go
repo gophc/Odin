@@ -6,7 +6,7 @@ import (
 	"io"
 	"sync"
 
-	"github.com/gophc/gophc/gophc-core/internal/fse"
+	"github.com/gophc/Odin/godin/internal/fse"
 )
 
 type dTable struct {

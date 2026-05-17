@@ -10,8 +10,8 @@ import (
 	"hash/crc32"
 	"io"
 
-	"github.com/gophc/gophc/gophc-core/internal/huff0"
-	snappy "github.com/gophc/gophc/gophc-core/internal/snapref"
+	"github.com/gophc/Odin/godin/internal/huff0"
+	snappy "github.com/gophc/Odin/godin/internal/snapref"
 )
 
 const (

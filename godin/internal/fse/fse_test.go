@@ -215,7 +215,7 @@ func TestReadNCount(t *testing.T) {
 				if s.symbolLen != s2.symbolLen {
 					t.Errorf(name+"norm table, want size: %d, got %d", s.symbolLen, s2.symbolLen)
 				}
-				t.Errorf(name + "norm table, got delta: \n")
+				t.Error(name + "norm table, got delta: \n")
 				return
 			}
 			for i, dec := range s2.decTable {
@@ -240,7 +240,7 @@ func TestReadNCount(t *testing.T) {
 					return
 				}
 				if !bytes.Equal(buf0, dc) {
-					t.Errorf(name + "decompressed, got delta.")
+					t.Error(name + "decompressed, got delta.")
 				}
 				if !t.Failed() {
 					t.Log("... roundtrip ok!")

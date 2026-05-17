@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gophc/gophc/gophc-core/internal/cpuinfo"
+	"github.com/gophc/Odin/godin/internal/cpuinfo"
 )
 
 // decompress4x_main_loop_x86 is an x86 assembler implementation

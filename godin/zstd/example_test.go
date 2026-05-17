@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/gophc/gophc/gophc-core/zstd"
+	"github.com/gophc/Odin/godin/zstd"
 )
 
 func ExampleWithEncoderDictRaw() {

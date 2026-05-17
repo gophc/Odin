@@ -4,7 +4,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/gophc/gophc/gophc-core/platform/sys"
+	"github.com/gophc/Odin/godin/platform/sys"
 )
 
 const (

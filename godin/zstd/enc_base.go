@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/bits"
 
-	"github.com/gophc/gophc/gophc-core/util/xxhash"
+	"github.com/gophc/Odin/godin/util/xxhash"
 )
 
 const (

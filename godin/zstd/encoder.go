@@ -12,7 +12,7 @@ import (
 	rdebug "runtime/debug"
 	"sync"
 
-	"github.com/gophc/gophc/gophc-core/util/xxhash"
+	"github.com/gophc/Odin/godin/util/xxhash"
 )
 
 // Encoder provides encoding to Zstandard.

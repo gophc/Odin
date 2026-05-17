@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/gophc/gophc/gophc-core/internal/cpuinfo"
+	"github.com/gophc/Odin/godin/internal/cpuinfo"
 )
 
 type decodeSyncAsmContext struct {

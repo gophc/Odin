@@ -9,7 +9,7 @@ import (
 	"io"
 	"sync"
 
-	"github.com/gophc/gophc/gophc-core/internal/flate"
+	"github.com/gophc/Odin/godin/internal/flate"
 )
 
 // A Compressor returns a new compressing writer, writing to w.

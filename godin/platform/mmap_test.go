@@ -3,7 +3,7 @@ package platform
 import (
 	"testing"
 
-	"github.com/gophc/gophc/gophc-core/platform/sys/require"
+	"github.com/gophc/Odin/godin/platform/sys/require"
 )
 
 func Test_MmapCodeSegment(t *testing.T) {

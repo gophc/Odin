@@ -19,7 +19,7 @@ import (
 	"testing/fstest"
 	"time"
 
-	"github.com/gophc/gophc/gophc-core/internal"
+	"github.com/gophc/Odin/godin/internal"
 )
 
 type ZipTest struct {

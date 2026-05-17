@@ -7,7 +7,7 @@ package zstd
 import (
 	"bytes"
 	"fmt"
-	"github.com/gophc/gophc/gophc-core/internal"
+	"github.com/gophc/Odin/godin/internal"
 )
 
 const (

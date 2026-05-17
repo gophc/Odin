@@ -9,7 +9,7 @@ import (
 	"math"
 	"sort"
 
-	"github.com/gophc/gophc/gophc-core/internal/huff0"
+	"github.com/gophc/Odin/godin/internal/huff0"
 )
 
 type dict struct {

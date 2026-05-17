@@ -10,7 +10,7 @@ import (
 	"math/bits"
 	"sync"
 
-	"github.com/gophc/gophc/gophc-core/internal/fse"
+	"github.com/gophc/Odin/godin/internal/fse"
 )
 
 const (

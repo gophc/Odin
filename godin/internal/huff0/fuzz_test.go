@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/gophc/gophc/gophc-core/internal/fuzz"
+	"github.com/gophc/Odin/godin/internal/fuzz"
 )
 
 func FuzzCompress(f *testing.F) {

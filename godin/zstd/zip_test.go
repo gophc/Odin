@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/gophc/gophc/gophc-core/zstd"
+	"github.com/gophc/Odin/godin/zstd"
 )
 
 //goland:noinspection GoDeprecation,GoUnhandledErrorResult

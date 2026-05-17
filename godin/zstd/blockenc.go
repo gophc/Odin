@@ -10,7 +10,7 @@ import (
 	"math"
 	"math/bits"
 
-	"github.com/gophc/gophc/gophc-core/internal/huff0"
+	"github.com/gophc/Odin/godin/internal/huff0"
 )
 
 type blockEnc struct {

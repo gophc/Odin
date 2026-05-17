@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gophc/gophc/gophc-core/zstd"
 	"hash/adler32"
 	"os"
 	"path/filepath"
 	"strings"
 	"unsafe"
+
+	"github.com/gophc/Odin/godin/zstd"
 )
 
 var JsV8Ver = [4]byte{11, 9, 169, 6}

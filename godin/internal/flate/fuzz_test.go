@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/gophc/gophc/gophc-core/internal/fuzz"
+	"github.com/gophc/Odin/godin/internal/fuzz"
 )
 
 // Fuzzing tweaks:

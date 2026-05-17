@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	snappy "github.com/gophc/gophc/gophc-core/internal/snapref"
+	snappy "github.com/gophc/Odin/godin/internal/snapref"
 )
 
 //goland:noinspection GoUnhandledErrorResult

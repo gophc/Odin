@@ -12,8 +12,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/gophc/gophc/gophc-core/internal/cpuinfo"
-	"github.com/gophc/gophc/gophc-core/internal/zip"
+	"github.com/gophc/Odin/godin/internal/cpuinfo"
+	"github.com/gophc/Odin/godin/internal/zip"
 )
 
 func Benchmark_seqdec_decodeNoBMI(b *testing.B) {

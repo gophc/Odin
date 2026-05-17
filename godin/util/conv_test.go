@@ -70,13 +70,13 @@ func testStrtoul(t *testing.T, str string, expectedN uint64, args ...int) {
 	n, _, p, err := Strtoul(s, len(str), radix)
 	if err != nil {
 		if nn != -1 {
-			t.Fatalf("Unexpected err %v. str=%q", err, s)
+			t.Fatalf("Unexpected err %v. str=%q", err, str)
 		}
 		return
 	}
 
 	if n != expectedN {
-		t.Fatalf("Unexpected value %d. Expected %d. str=%q", n, expectedN, s)
+		t.Fatalf("Unexpected value %d. Expected %d. str=%q", n, expectedN, str)
 	}
 
 	if expectedN <= 9223372036854775807 {
@@ -84,7 +84,7 @@ func testStrtoul(t *testing.T, str string, expectedN uint64, args ...int) {
 		expectedL = TrySecond(args, expectedL)
 		sn := int(p - s)
 		if sn != expectedL {
-			t.Fatalf("Unexpected eofPos %d. Expected %d. str=%q", sn, expectedL, s)
+			t.Fatalf("Unexpected eofPos %d. Expected %d. str=%q", sn, expectedL, str)
 		}
 	}
 }
@@ -144,7 +144,7 @@ func testStrtold(t *testing.T, str string, expectedF float64, args ...int) {
 	f, p, err := Strtold(s, len(str))
 	if err != nil {
 		if nn != -1 {
-			t.Fatalf("Unexpected err %v. str=%q", err, s)
+			t.Fatalf("Unexpected err %v. str=%q", err, str)
 		}
 		return
 	}
@@ -154,14 +154,14 @@ func testStrtold(t *testing.T, str string, expectedF float64, args ...int) {
 		delta = -delta
 	}
 	if delta > expectedF*1e-10 {
-		t.Fatalf("Unexpected value when parsing %q: %f. Expected %f", s, f, expectedF)
+		t.Fatalf("Unexpected value when parsing %q: %f. Expected %f", str, f, expectedF)
 	}
 
 	expectedL := len(str)
 	expectedL = TrySecond(args, expectedL)
 	sn := int(p - s)
 	if sn != expectedL {
-		t.Fatalf("Unexpected eofPos %d. Expected %d. str=%q", sn, expectedL, s)
+		t.Fatalf("Unexpected eofPos %d. Expected %d. str=%q", sn, expectedL, str)
 	}
 }
 
@@ -251,27 +251,27 @@ func TestParseUfloatError(t *testing.T) {
 	testParseUfloatError(t, "123534e")
 }
 
-func testParseUfloatError(t *testing.T, s string) {
-	n, err := ParseUfloat([]byte(s))
+func testParseUfloatError(t *testing.T, str string) {
+	n, err := ParseUfloat([]byte(str))
 	if err == nil {
-		t.Fatalf("Expecting error when parsing %q. obtained %f", s, n)
+		t.Fatalf("Expecting error when parsing %q. obtained %f", str, n)
 	}
 	if n >= 0 {
-		t.Fatalf("Expecting negative num instead of %f when parsing %q", n, s)
+		t.Fatalf("Expecting negative num instead of %f when parsing %q", n, str)
 	}
 }
 
-func testParseUfloatSuccess(t *testing.T, s string, expectedF float64) {
-	f, err := ParseUfloat([]byte(s))
+func testParseUfloatSuccess(t *testing.T, str string, expectedF float64) {
+	f, err := ParseUfloat([]byte(str))
 	if err != nil {
-		t.Fatalf("Unexpected error when parsing %q: %v", s, err)
+		t.Fatalf("Unexpected error when parsing %q: %v", str, err)
 	}
 	delta := f - expectedF
 	if delta < 0 {
 		delta = -delta
 	}
 	if delta > expectedF*1e-10 {
-		t.Fatalf("Unexpected value when parsing %q: %f. Expected %f", s, f, expectedF)
+		t.Fatalf("Unexpected value when parsing %q: %f. Expected %f", str, f, expectedF)
 	}
 }
 
@@ -288,36 +288,36 @@ func TestParseUfloatBufSuccess(t *testing.T) {
 	testParseUfloatBufSuccess(t, "1.234e+3 ", 1.234e+3)
 }
 
-func testParseUfloatBufSuccess(t *testing.T, s string, expectedF float64) {
-	f, _, err := ParseUfloatBuf([]byte(s))
+func testParseUfloatBufSuccess(t *testing.T, str string, expectedF float64) {
+	f, _, err := ParseUfloatBuf([]byte(str))
 	if err != nil {
-		t.Fatalf("Unexpected error when parsing %q: %v", s, err)
+		t.Fatalf("Unexpected error when parsing %q: %v", str, err)
 	}
 	delta := f - expectedF
 	if delta < 0 {
 		delta = -delta
 	}
 	if delta > expectedF*1e-10 {
-		t.Fatalf("Unexpected value when parsing %q: %f. Expected %f", s, f, expectedF)
+		t.Fatalf("Unexpected value when parsing %q: %f. Expected %f", str, f, expectedF)
 	}
 }
 
-func testParseUintError(t *testing.T, s string) {
-	n, err := ParseUint([]byte(s))
+func testParseUintError(t *testing.T, str string) {
+	n, err := ParseUint([]byte(str))
 	if err == nil {
-		t.Fatalf("Expecting error when parsing %q. obtained %d", s, n)
+		t.Fatalf("Expecting error when parsing %q. obtained %d", str, n)
 	}
 	if n >= 0 {
-		t.Fatalf("Unexpected n=%d when parsing %q. Expected negative num", n, s)
+		t.Fatalf("Unexpected n=%d when parsing %q. Expected negative num", n, str)
 	}
 }
 
-func testParseUintSuccess(t *testing.T, s string, expectedN int) {
-	n, err := ParseUint([]byte(s))
+func testParseUintSuccess(t *testing.T, str string, expectedN int) {
+	n, err := ParseUint([]byte(str))
 	if err != nil {
-		t.Fatalf("Unexpected error when parsing %q: %v", s, err)
+		t.Fatalf("Unexpected error when parsing %q: %v", str, err)
 	}
 	if n != expectedN {
-		t.Fatalf("Unexpected value %d. Expected %d. num=%q", n, expectedN, s)
+		t.Fatalf("Unexpected value %d. Expected %d. num=%q", n, expectedN, str)
 	}
 }

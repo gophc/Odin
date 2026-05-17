@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gophc/gophc/gophc-core/platform/sys"
-	"github.com/gophc/gophc/gophc-core/platform/sys/require"
+	"github.com/gophc/Odin/godin/platform/sys"
+	"github.com/gophc/Odin/godin/platform/sys/require"
 )
 
 func Test_NewFakeWalltime(t *testing.T) {

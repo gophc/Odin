@@ -11,8 +11,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/gophc/gophc/gophc-core/internal/flate"
-	"github.com/gophc/gophc/gophc-core/internal/zip"
+	"github.com/gophc/Odin/godin/internal/flate"
+	"github.com/gophc/Odin/godin/internal/zip"
 )
 
 func ExampleWriter() {

@@ -10,8 +10,8 @@ import (
 	rdebug "runtime/debug"
 	"testing"
 
-	"github.com/gophc/gophc/gophc-core/internal/cpuinfo"
-	"github.com/gophc/gophc/gophc-core/internal/fuzz"
+	"github.com/gophc/Odin/godin/internal/cpuinfo"
+	"github.com/gophc/Odin/godin/internal/fuzz"
 )
 
 func FuzzDecodeAll(f *testing.F) {

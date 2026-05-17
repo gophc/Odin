@@ -10,7 +10,7 @@ import (
 	"io"
 	"sync"
 
-	"github.com/gophc/gophc/gophc-core/util/xxhash"
+	"github.com/gophc/Odin/godin/util/xxhash"
 )
 
 // Decoder provides decoding of zstandard streams.

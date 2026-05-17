@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/gophc/gophc/gophc-core/platform/sys/require"
+	"github.com/gophc/Odin/godin/platform/sys/require"
 )
 
 func TestHugePageConfigs(t *testing.T) {

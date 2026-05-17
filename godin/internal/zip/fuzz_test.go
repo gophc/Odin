@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gophc/gophc/gophc-core/internal/fuzz"
+	"github.com/gophc/Odin/godin/internal/fuzz"
 )
 
 func FuzzReader(f *testing.F) {

@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gophc/gophc/gophc-core/internal/zip"
+	"github.com/gophc/Odin/godin/internal/zip"
 )
 
 func TestSequenceDecsAdjustOffset(t *testing.T) {

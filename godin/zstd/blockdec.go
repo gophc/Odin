@@ -15,8 +15,8 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/gophc/gophc/gophc-core/internal/huff0"
-	"github.com/gophc/gophc/gophc-core/util/xxhash"
+	"github.com/gophc/Odin/godin/internal/huff0"
+	"github.com/gophc/Odin/godin/util/xxhash"
 )
 
 type blockType uint8
